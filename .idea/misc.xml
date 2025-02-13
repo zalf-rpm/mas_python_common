@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Poetry (zalfmas-common)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (zalfmas-common)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (mas_python_common)" project-jdk-type="Python SDK" />
 </project>

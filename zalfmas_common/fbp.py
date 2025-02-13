@@ -375,12 +375,7 @@ async def main(no_of_channels=1, buffer_size=1, serve_bootstrap=True, host=None,
         "store_srs_file": None
     }
 
-    # read commandline args only if script is invoked directly from commandline
-    if len(sys.argv) > 1 and __name__ == "__main__":
-        for arg in sys.argv[1:]:
-            k, v = arg.split("=")
-            config[k] = v.lower() == "true" if v.lower() in ["true", "false"] else v
-    print(config)
+    common.update_config(config, sys.argv, print_config=True, allow_new_keys=False)
 
     channel_to_reader_srts = defaultdict(list)
     channel_to_writer_srts = defaultdict(list)
@@ -414,18 +409,11 @@ async def main(no_of_channels=1, buffer_size=1, serve_bootstrap=True, host=None,
             with open(store_srs_file_path, mode="wt") as _:
                 _.write(json.dumps(name_to_service_srs))
 
-    if config["use_async"]:
-        await serv.async_init_and_run_service(services, config["host"], config["port"],
-                                              serve_bootstrap=config["serve_bootstrap"], restorer=restorer,
-                                              name_to_service_srs=name_to_service_srs,
-                                              run_before_enter_eventloop=write_srs)
-    else:
-
-        serv.init_and_run_service(services, config["host"], config["port"],
-                                  serve_bootstrap=config["serve_bootstrap"], restorer=restorer,
-                                  name_to_service_srs=name_to_service_srs,
-                                  run_before_enter_eventloop=write_srs)
+    await serv.async_init_and_run_service(services, config["host"], config["port"],
+                                          serve_bootstrap=config["serve_bootstrap"], restorer=restorer,
+                                          name_to_service_srs=name_to_service_srs,
+                                          run_before_enter_eventloop=write_srs)
 
 
 if __name__ == '__main__':
-    asyncio.run(main(no_of_channels=1, buffer_size=1, serve_bootstrap=True, use_async=False))
+    asyncio.run(main(no_of_channels=1, buffer_size=1, serve_bootstrap=True))

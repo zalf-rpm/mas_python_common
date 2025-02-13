@@ -13,9 +13,9 @@ pyproj = "^3.6.1"
 scipy = "^1.13.1"
 pandas = "^2.2.2"
 psutil = "^6.1.0"
-#zalfmas-capnpschemas = {path = "../../..", develop = true}
+#zalfmas-capnp-schemas = {path = "../../..", develop = true}
 tomlkit = "^0.13.2"
-zalfmas-capnp-schemas = "^0.1.2"
+zalfmas-capnp-schemas = "^0.1.11"
 
 
 [build-system]
