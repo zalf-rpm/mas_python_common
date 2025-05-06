@@ -115,17 +115,19 @@ def create_default_fbp_component_args_parser(component_description):
     return parser
 
 
-def handle_default_fpb_component_args(parser, config):
+def handle_default_fpb_component_args(parser, config=None):
     args = parser.parse_args()
 
     doc = tk.document()
     doc.add(tk.comment(f"{parser.prog} config"))
-    for k, v in config.items():
-        if type(v) is tuple:
-            v, comment = v
-            doc.add(tk.comment(comment))
-        doc.add(k, v)
+    if config:
+        for k, v in config.items():
+            if type(v) is tuple:
+                v, comment = v
+                doc.add(tk.comment(comment))
+            doc.add(k, v)
 
+    port_infos_reader_sr = None
     if args.output_toml_config:
         print(tk.dumps(doc))
         exit(0)
