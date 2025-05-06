@@ -14,7 +14,9 @@
 
 import asyncio
 import base64
+import argparse
 import capnp
+import io
 import json
 from pathlib import Path
 import os
@@ -88,6 +90,55 @@ def update_config(config, argv, print_config=False, allow_new_keys=False):
                 config[k] = v.lower() == "true" if v.lower() in ["true", "false"] else v
         if print_config:
             print(config)
+
+
+def create_default_fbp_component_args_parser(component_description):
+    parser = argparse.ArgumentParser(description=component_description)
+    parser.add_argument(
+        "port_infos_reader_sr",
+        type=str,
+        nargs="?",
+        help="Sturdy ref to reader capability for receiving sturdy refs to connected channels (via ports)",
+    )
+    parser.add_argument(
+        "--output_toml_config",
+        "-o",
+        action="store_true",
+        help="Output TOML configuration file with default settings at commandline. To be used with IIP at 'conf' port.",
+    )
+    parser.add_argument(
+        "--write_toml_config",
+        "-w",
+        type=str,
+        help="Create a TOML configuration file with default settings in the current directory. To used with IIP at 'conf' port.",
+    )
+    return parser
+
+
+def handle_default_fpb_component_args(parser, config):
+    args = parser.parse_args()
+
+    doc = tk.document()
+    doc.add(tk.comment(f"{parser.prog} config"))
+    for k, v in config.items():
+        if type(v) is tuple:
+            v, comment = v
+            doc.add(tk.comment(comment))
+        doc.add(k, v)
+
+    if args.output_toml_config:
+        print(tk.dumps(doc))
+        exit(0)
+    elif args.write_toml_config:
+        with open(args.write_toml_config, "w") as _:
+            tk.dump(doc, _)
+            exit(0)
+    elif args.port_infos_reader_sr is not None:
+        port_infos_reader_sr = args.port_infos_reader_sr
+    else:
+        parser.error("argument port_infos_reader_sr: expected sturdy ref")
+
+    return port_infos_reader_sr, args
 
 
 def create_service_toml_config(header_comment: str = None, id = None, name=None, description=None,
