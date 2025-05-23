@@ -8,20 +8,18 @@
 # Maintainers:
 # Currently maintained by the authors.
 #
-# This file has been created at the Institute of
-# Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
+import argparse
 import capnp
 import json
 import os
 from pathlib import Path
 import sys
 import threading
-
+import tomlkit as tk
 from zalfmas_common import common
 import zalfmas_capnp_schemas
-
 sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
 import common_capnp
 import fbp_capnp
@@ -202,3 +200,66 @@ async def init_and_run_service(name_to_service, host=None, port=0, serve_bootstr
     #    await conn_man.manage_forever()
 
 
+def handle_default_service_args(parser, config: dict=None):
+    args = parser.parse_args()
+
+    remove_keys = []
+    doc = tk.document()
+    doc.add(tk.comment(f"{parser.prog} Service configuration (data and documentation)"))
+    defaults = tk.table()
+    opts = tk.table()
+    if config:
+        for k, v in config.items():
+            if v is None:
+                continue
+            if "opt:" in k:
+                opts.add(k[4:], v)
+                remove_keys.append(k)
+            else:
+                defaults.add(k, v)
+    if len(defaults) > 0:
+        doc.add("defaults", defaults)
+    if len(opts) > 0:
+        doc.add("options", opts)
+
+    if args.output_toml_config:
+        print(tk.dumps(doc))
+        exit(0)
+    elif args.write_toml_config:
+        with open(args.write_toml_config, "w") as _:
+            tk.dump(doc, _)
+            exit(0)
+    elif args.config_toml is not None:
+        with open(args.config_toml, "r") as f:
+            toml_config = tk.load(f)
+        config.update({ k:v for k, v in toml_config.items() if type(v) is not tk.items.Table})
+        config.update(toml_config.get("defaults", {}))
+    else:
+        parser.error("argument config_toml: expected path to config TOML file")
+
+    for k in remove_keys:
+        del config[k]
+    return config, args
+
+
+def create_default_args_parser(component_description):
+    parser = argparse.ArgumentParser(description=component_description)
+    parser.add_argument(
+        "config_toml",
+        type=str,
+        nargs="?",
+        help="TOML configuration file",
+    )
+    parser.add_argument(
+        "--output_toml_config",
+        "-o",
+        action="store_true",
+        help="Output TOML configuration file with default settings at commandline.",
+    )
+    parser.add_argument(
+        "--write_toml_config",
+        "-w",
+        type=str,
+        help="Create a TOML configuration file with default settings in the current directory.",
+    )
+    return parser
