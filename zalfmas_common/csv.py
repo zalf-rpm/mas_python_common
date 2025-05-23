@@ -11,12 +11,9 @@
 # Maintainers:
 # Currently maintained by the authors.
 #
-# This file has been created at the Institute of
-# Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 import csv
-
 
 def read_csv(path_to_setups_csv, key="id"):
     """read sim setup from csv file"""

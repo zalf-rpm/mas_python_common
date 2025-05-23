@@ -8,8 +8,6 @@
 # Maintainers:
 # Currently maintained by the authors.
 #
-# This file is part of the util library used by models created at the Institute of
-# Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 import sqlite3

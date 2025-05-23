@@ -11,8 +11,6 @@
 # Maintainers:
 # Currently maintained by the authors.
 #
-# This file has been created at the Institute of
-# Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 import capnp
@@ -24,12 +22,10 @@ from pathlib import Path
 from pyproj import CRS
 from scipy.interpolate import NearestNDInterpolator
 import sys
-
 from zalfmas_common import common
 from zalfmas_common import service as serv
 from zalfmas_common import rect_ascii_grid_management as ragm
 import zalfmas_capnp_schemas
-
 sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
 import climate_capnp
 import geo_capnp

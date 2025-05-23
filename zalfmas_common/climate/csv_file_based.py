@@ -11,8 +11,6 @@
 # Maintainers:
 # Currently maintained by the authors.
 #
-# This file has been created at the Institute of
-# Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 from collections import deque, OrderedDict
@@ -26,11 +24,9 @@ import pandas as pd
 from pathlib import Path
 import psutil
 import sys
-
 from zalfmas_common import common
 from zalfmas_common.climate import common_climate_data_capnp_impl as ccdi
 import zalfmas_capnp_schemas
-
 sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
 import common_capnp
 import geo_capnp
@@ -204,9 +200,9 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
         self._percentage_of_main_memory_use = percentage_of_main_memory_use
         self._cache_data = cache_data
 
-    async def metadata(self, _context, **kwargs):  # metadata @0 () -> Metadata;
+    async def metadata_context(self, context):  # metadata @0 () -> Metadata;
         # get metadata for these data 
-        r = _context.results
+        r = context.results
         r.init("entries", len(self._meta.entries))
         for i, e in enumerate(self._meta.entries):
             r.entries[i] = e
@@ -297,7 +293,7 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
             locs.extend(self._locations.values())
         return locs
 
-    async def streamLocations(self, _context):  # streamLocations @4 (startAfterLocationId :Text) -> (locationsCallback :GetLocationsCallback);
+    async def streamLocations_context(self, context):  # streamLocations @4 (startAfterLocationId :Text) -> (locationsCallback :GetLocationsCallback);
         # all the climate locations this dataset has
 
         def create_loc(row_col, coord):
@@ -307,8 +303,8 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
             loc.timeSeries = ts
             return loc
 
-        loc_id = _context.params.startAfterLocationId
-        if (loc_id and len(loc_id) > 0):
+        loc_id = context.params.startAfterLocationId
+        if loc_id and len(loc_id) > 0:
             it = itertools.dropwhile(lambda rcll: self.create_location_id(*rcll[0]) != loc_id,
                                      self._rowcol_to_latlon.items())
             next(it)
@@ -316,7 +312,7 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
             it = self._rowcol_to_latlon.items()
 
         locs_gen = (create_loc(row_col, coord) for row_col, coord in it)
-        _context.results.locationsCallback = GetLocationsCallback(locs_gen)
+        context.results.locationsCallback = GetLocationsCallback(locs_gen)
 
 
 class GetLocationsCallback(climate_capnp.Dataset.GetLocationsCallback.Server):
