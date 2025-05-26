@@ -462,17 +462,17 @@ files = [
 
 [[package]]
 name = "zalfmas-capnp-schemas"
-version = "0.1.15"
+version = "0.1.18"
 description = ""
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "zalfmas_capnp_schemas-0.1.15-py3-none-any.whl", hash = "sha256:b05be4636771b702eeb58f06e5b1545023fa4f469a65fdf0619a0f5acbcad08a"},
-    {file = "zalfmas_capnp_schemas-0.1.15.tar.gz", hash = "sha256:7e2dc833c12681f2e899c1cdbadec7ada67403a94ca323d1d83e51d0e54ec144"},
+    {file = "zalfmas_capnp_schemas-0.1.18-py3-none-any.whl", hash = "sha256:4f87972629551fc95a279bd3bfd9c39904051870b4efa69ff4fc1e2f89972355"},
+    {file = "zalfmas_capnp_schemas-0.1.18.tar.gz", hash = "sha256:11613bdb268a04f62458f3436929d4f1ca9e9ffbf5720f51df63edf9f250d525"},
 ]
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "1826ff733ca3177d8c3fc4daba28636046e73402793a8e9e2e3a985db76371cc"
+content-hash = "68a442305d5231ddd8ea89d41d843145783085d37152f8feecd55002eddbdf55"

@@ -31,6 +31,13 @@ sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
 import common_capnp
 import persistence_capnp
 
+
+def as_sturdy_ref(anypointer):
+    st = anypointer.as_struct(common_capnp.StructuredText)
+    if st.type == "sturdyRef":
+        return st.value
+    return None
+
 def get_fbp_attr(ip, attr_name):
     if ip.attributes and attr_name:
         for kv in ip.attributes:
