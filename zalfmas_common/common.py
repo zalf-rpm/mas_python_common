@@ -27,7 +27,9 @@ import tomlkit as tk
 import urllib.parse as urlp
 import uuid
 import zalfmas_capnp_schemas
-sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
+schema_dir = os.path.dirname(zalfmas_capnp_schemas.__file__)
+if schema_dir not in sys.path:
+    sys.path.append(schema_dir)
 import common_capnp
 import persistence_capnp
 
@@ -661,31 +663,40 @@ class ConnectionManager:
             await asyncio.sleep(retry_secs)
             retry_secs += 1
 
-
-def load_capnp_module(path_and_type, def_type="Text"):
+# very questionable if this is a good idea ... too many problems pop up when loading schemas dynamically
+def load_capnp_module(path_and_type, def_type="Text", new_message=False, **kwargs):
     capnp_type = def_type
     if path_and_type:
         p_and_t = path_and_type.split(":")
+        params = None
         if len(p_and_t) > 1:
-            capnp_module_path, type_name = p_and_t
-            capnp_module = capnp.load(capnp_module_path)#, imports=abs_imports)
+            capnp_module_path_and_name, type_name_and_params = p_and_t
+            capnp_module_path = os.path.dirname(capnp_module_path_and_name)
+            if len(capnp_module_path) == 0:
+                capnp_module_path = "."
+            if capnp_module_path == "zalfmas_capnp_schemas":
+                capnp_module_path = schema_dir
+            capnp_module_name = os.path.basename(capnp_module_path_and_name)
+            type_name_and_params = type_name_and_params.split("&")
+            if len(type_name_and_params) > 1:
+                type_name, params = type_name_and_params
+            else:
+                type_name = type_name_and_params[0]
+            capnp_module = capnp.load(os.path.join(capnp_module_path, capnp_module_name))#, imports=sys.path)
             capnp_type = capnp_module.__dict__.get(type_name, def_type)
+            if new_message:
+                if params:
+                    kwargs.update({k: v for k, v in params.split("=")})
+                nm = capnp_type.new_message(**kwargs)
+                return capnp_type, nm
         elif len(p_and_t) > 0:
             capnp_type = p_and_t[0]
-    return capnp_type
+    return capnp_type, None
 
 
 def load_capnp_modules(id_to_path_and_type, def_type="Text"):
     id_to_type = {}
     for name, path_and_type in id_to_path_and_type.items():
-        capnp_type = def_type
-        if path_and_type:
-            p_and_t = path_and_type.split(":")
-            if len(p_and_t) > 1:
-                capnp_module_path, type_name = p_and_t
-                capnp_module = capnp.load(capnp_module_path)#, imports=abs_imports)
-                capnp_type = capnp_module.__dict__.get(type_name, def_type)
-            elif len(p_and_t) > 0:
-                capnp_type = p_and_t[0]
+        capnp_type, _ = load_capnp_module(path_and_type, def_type=def_type)
         id_to_type[name] = capnp_type
     return id_to_type
