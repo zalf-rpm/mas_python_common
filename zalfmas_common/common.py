@@ -700,3 +700,17 @@ def load_capnp_modules(id_to_path_and_type, def_type="Text"):
         capnp_type, _ = load_capnp_module(path_and_type, def_type=def_type)
         id_to_type[name] = capnp_type
     return id_to_type
+
+
+class Holder(common_capnp.Holder.Server):
+    def __init__(self, value):
+        self.value = value
+
+    async def value_context(self, context):  # value @0 () -> (value :T);
+        context.results.value = self.value
+
+
+class IdentifiableHolder(common_capnp.IdentifiableHolder.Server, Holder, Identifiable):
+    def __init__(self, value, id=None, name=None, description=None):
+        Holder.__init__(self, value)
+        Identifiable.__init__(self, id=id, name=name, description=description)
