@@ -16,6 +16,8 @@ dependencies = [
     "zalfmas-capnp-schemas (>=0.1.29,<0.2.0)",
     # Referencing local package example:
     # "zalfmas-capnp-schemas @ file:///home/<user>/Zalf/zalf-rpm/mas/mas_capnproto_schemas",
+    # Or git repositories
+    # "zalfmas-capnp-schemas @ git+https://github.com/zalf-rpm/mas_capnproto_schemas.git"
 ]
 
 [build-system]
