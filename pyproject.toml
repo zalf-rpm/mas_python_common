@@ -1,22 +1,23 @@
-[tool.poetry]
+[project]
 name = "zalfmas-common"
 version = "0.1.22"
 description = "Common code for ZALF MAS projects"
-authors = ["Michael Berg-Mohnicke <michael.berg@zalf.de>"]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-pycapnp = "^2.0.0"
-pysodium = "^0.7.17"
-pyproj = "^3.6.1"
-scipy = "^1.13.1"
-pandas = "^2.2.2"
-psutil = "^6.1.0"
-#zalfmas-capnp-schemas = {path = "../../..", develop = true}
-tomlkit = "^0.13.2"
-zalfmas-capnp-schemas = "^0.1.23"
+authors = [{ name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de" }]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "pycapnp>=2.0.0,<3.0.0",
+    "pysodium>=0.7.17,<0.8.0",
+    "pyproj>=3.6.1,<4.0.0",
+    "scipy>=1.13.1,<2.0.0",
+    "pandas>=2.2.2,<3.0.0",
+    "psutil>=6.1.0,<7.0.0",
+    "tomlkit>=0.13.2,<0.14.0",
+    "zalfmas-capnp-schemas (>=0.1.29,<0.2.0)",
+    # Referencing local package example:
+    # "zalfmas-capnp-schemas @ file:///home/<user>/Zalf/zalf-rpm/mas/mas_capnproto_schemas",
+]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
