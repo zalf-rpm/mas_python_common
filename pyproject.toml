@@ -14,12 +14,12 @@ dependencies = [
     "psutil>=6.1.0,<7.0.0",
     "tomlkit>=0.13.2,<0.14.0",
     "zalfmas-capnp-schemas (>=0.1.29,<0.2.0)",
-    # Referencing local package example:
-    # "zalfmas-capnp-schemas @ file:///home/<user>/Zalf/zalf-rpm/mas/mas_capnproto_schemas",
-    # Or git repositories
-    # "zalfmas-capnp-schemas @ git+https://github.com/zalf-rpm/mas_capnproto_schemas.git"
 ]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+# Example for referencing local packages in editable mode
+# [tool.poetry.dependencies]
+# zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
