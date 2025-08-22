@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: testpypi
-      url: https://test.pypi.org/project/zalfmas-common
+      url: https://test.pypi.org/p/zalfmas-common
     steps:
       # Build + publish Python package to PyPI on release via Trusted Publishing
       - name: Checkout
@@ -36,3 +36,5 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          verbose: true
