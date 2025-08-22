@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.26](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.25...v0.1.26) (2025-08-22)
+
+
+### Bug Fixes
+
+* try and put something into the README.md ([4260b92](https://github.com/zalf-rpm/mas_python_common/commit/4260b928baf256fbe1fc3b7eb428b37cde36dbb4))
+
 ## [0.1.25](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.24...v0.1.25) (2025-08-22)
 
 
