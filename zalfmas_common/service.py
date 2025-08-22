@@ -242,13 +242,16 @@ def handle_default_service_args(parser, config: dict=None):
     return config, args
 
 
-def create_default_args_parser(component_description):
+def create_default_args_parser(
+    component_description: str, default_config_path: str | None = None
+):
     parser = argparse.ArgumentParser(description=component_description)
     parser.add_argument(
         "config_toml",
         type=str,
         nargs="?",
         help="TOML configuration file",
+        default=default_config_path,
     )
     parser.add_argument(
         "--output_toml_config",
