@@ -6,14 +6,14 @@ readme = "README.md"
 authors = [{ name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de" }]
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "pycapnp>=2.0.0,<3.0.0",
-    "pysodium>=0.7.17,<0.8.0",
-    "pyproj>=3.6.1,<4.0.0",
-    "scipy>=1.13.1,<2.0.0",
-    "pandas>=2.2.2,<3.0.0",
-    "psutil>=6.1.0,<7.0.0",
-    "tomlkit>=0.13.2,<0.14.0",
-    "zalfmas-capnp-schemas (>=0.1.29,<0.2.0)",
+  "pycapnp>=2.0.0,<3.0.0",
+  "pysodium>=0.7.17,<0.8.0",
+  "pyproj>=3.6.1,<4.0.0",
+  "scipy>=1.13.1,<2.0.0",
+  "pandas>=2.2.2,<3.0.0",
+  "psutil>=6.1.0,<7.0.0",
+  "tomlkit>=0.13.2,<0.14.0",
+  "zalfmas-capnp-schemas (>=0.1.29,<0.2.0)",
 ]
 
 [build-system]
