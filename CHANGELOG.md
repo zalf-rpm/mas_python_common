@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.24](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.23...v0.1.24) (2025-08-22)
+
+
+### Bug Fixes
+
+* skip existing and print verbose output ([7f6e819](https://github.com/zalf-rpm/mas_python_common/commit/7f6e819853a50868426deccbf33c1d0891be6c20))
+
 ## [0.1.23](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.22...v0.1.23) (2025-08-22)
 
 
