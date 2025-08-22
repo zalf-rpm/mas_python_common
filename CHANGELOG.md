@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.25](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.24...v0.1.25) (2025-08-22)
+
+
+### Bug Fixes
+
+* make content-type of readme explicit ([67b8029](https://github.com/zalf-rpm/mas_python_common/commit/67b8029395333ca0b8b0dbbe7069f25b4fc04d0d))
+
 ## [0.1.24](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.23...v0.1.24) (2025-08-22)
 
 
