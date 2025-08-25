@@ -98,37 +98,55 @@ def update_config(config, argv, print_config=False, allow_new_keys=False):
             print(config)
 
 
-def create_service_toml_config(header_comment: str = None, id = None, name=None, description=None,
-                               host=None, port=None, serve_bootstrap=None, sturdy_ref_token=None,
-                               reg_sturdy_ref=None, reg_category=None, **kwargs) -> tk.TOMLDocument:
-    config = tk.document()
-    config.add(tk.comment(header_comment if header_comment else "MAS service configuration file"))
-    config.add(tk.nl())
+def create_service_toml_config(header_comment: str = None,
+                               id = None, name=None, description=None,
+                               host=None, port=None, serve_bootstrap=None,
+                               fixed_sturdy_ref_token=None,
+                               reg_sturdy_ref=None, reg_category=None,
+                               resolver_sturdy_ref=None, resolver_alias=None) -> tk.TOMLDocument:
+    doc = tk.document()
+    doc.add(tk.comment(header_comment if header_comment else "MAS service configuration file"))
+    doc.add(tk.nl())
 
+    services = tk.aot()
     service = tk.table()
     service["id"] = id if id else str(uuid.uuid4())
     service["name"] = name if name else f"Service {service['id']}"
     service["description"] = description if description else f"No description for service {service['id']}"
-    config.add("service", service)
+    service["fixed_sturdy_ref_token"] = fixed_sturdy_ref_token if fixed_sturdy_ref_token else "a_sturdy_ref_token"
+    services.append(service)
 
-    caps = tk.table()
-    caps["fixed_sturdy_ref_token"] = sturdy_ref_token if sturdy_ref_token else "a_sturdy_ref_token"
-    register_at = tk.aot()
-    register_at.append(tk.item({
-        "sturdy_ref": reg_sturdy_ref if reg_sturdy_ref else "capnp://the_host_key@host:port/a_sturdy_ref_token",
-        "category": reg_category if reg_category else "a registry category",
-    }))
-    config.add("register_at", register_at)
-    config.add("caps", caps)
+    regs = tk.aot()
+    regs.name = "services.registries"
+    reg = tk.table()
+    reg["sturdy_ref"] = reg_sturdy_ref if reg_sturdy_ref else "capnp://the_host_key@host:port/a_sturdy_ref_token"
+    reg["category"] = reg_category if reg_category else "a registry category"
+    regs.append(reg)
 
-    network = tk.table()
-    network["host"] = host if host else "localhost"
-    network["port"] = port if port else 0
-    network["serve_bootstrap"] = serve_bootstrap if serve_bootstrap else True
-    config.add("network", network)
+    doc.add("services", services)
 
-    return config
+    resolvers = tk.aot()
+    resolvers.name = "resolvers"
+    res = tk.table()
+    res["alias"] = resolver_alias if resolver_alias else "some_alias_for_the_resolver"
+    res["resolver_sturdy_ref"] = reg_category if reg_category else "capnp://the_host_key@host:port/a_sturdy_ref_token"
+    resolvers.append(res)
 
+#    register_at = tk.aot()
+#    register_at.append(tk.item({
+#        "sturdy_ref": reg_sturdy_ref if reg_sturdy_ref else "capnp://the_host_key@host:port/a_sturdy_ref_token",
+#        "category": reg_category if reg_category else "a registry category",
+#    }))
+#    config.add("register_at", register_at)
+#    config.add("caps", caps)
+
+    vat = tk.table()
+    vat["host"] = host if host else "localhost"
+    vat["port"] = port if port else 0
+    vat["serve_bootstrap"] = serve_bootstrap if serve_bootstrap else True
+    doc.add("vat", vat)
+
+    return doc
 
 
 # def sign_sr_token_by_sk_and_encode_base64(self, sr_token):
@@ -193,6 +211,15 @@ class Restorer(persistence_capnp.Restorer.Server):
             int.from_bytes(self._sign_pk[16:24], byteorder=sys.byteorder, signed=False),
             int.from_bytes(self._sign_pk[24:32], byteorder=sys.byteorder, signed=False),
         ]
+
+    @property
+    def base64_vat_id(self):
+        return base64.urlsafe_b64encode(self._sign_pk).decode("utf-8")
+
+    def signature_of_vat_id(self):
+        public_key_bytes = base64.urlsafe_b64encode(self._sign_pk)
+        signature = pysodium.crypto_sign_detached(public_key_bytes, self._sign_sk)
+        return signature
 
     @property
     def storage_container(self):
@@ -573,6 +600,10 @@ class ConnectionManager:
     def __init__(self, restorer=None):
         self._connections = {}
         self._restorer = restorer if restorer else Restorer()
+
+    @property
+    def restorer(self):
+        return self._restorer
 
     async def connect(self, sturdy_ref, cast_as=None):
         if not sturdy_ref:
