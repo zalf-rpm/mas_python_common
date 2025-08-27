@@ -12,30 +12,26 @@
 
 import argparse
 import asyncio
-import capnp
-from datetime import datetime
-import json
 import os
-from pathlib import Path
 import sys
 import threading
-import tomlkit as tk
+from datetime import datetime
+
+import capnp
 import tomli as ti
-from zalfmas_common import common
+import tomlkit as tk
 import zalfmas_capnp_schemas
+
+from zalfmas_common import common
 from zalfmas_common.common import ConnectionManager
 
 sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
-import common_capnp
-import fbp_capnp
-import persistence_capnp
 import registry_capnp as reg_capnp
 import service_capnp
 import storage_capnp
 
 
 class AdministrableService:
-
     def __init__(self, admin=None):
         self._admin = admin
 
@@ -53,7 +49,6 @@ class AdministrableService:
 
 
 class Admin(service_capnp.Admin.Server, common.Identifiable):
-
     def __init__(self, services, id=None, name=None, description=None, timeout=0):
         common.Identifiable.__init__(self, id, name, description)
 
@@ -82,7 +77,11 @@ class Admin(service_capnp.Admin.Server, common.Identifiable):
 
     def make_timeout(self):
         if self._timeout > 0:
-            self._timeout_prom = capnp.getTimer().after_delay(self._timeout * 10 ** 9).then(lambda: exit(0))
+            self._timeout_prom = (
+                capnp.getTimer()
+                .after_delay(self._timeout * 10**9)
+                .then(lambda: exit(0))
+            )
 
     async def heartbeat(self, **kwargs):  # heartbeat @0 ();
         if self._timeout_prom:
@@ -100,18 +99,24 @@ class Admin(service_capnp.Admin.Server, common.Identifiable):
 
         if self._stop_action:
             print("Admin::stop message with stop_action")
-            return self._stop_action().then(lambda proms: [proms, threading.Timer(5, stop).start()][0])
+            return self._stop_action().then(
+                lambda proms: [proms, threading.Timer(5, stop).start()][0]
+            )
         else:
             print("Admin::stop message without")
             threading.Timer(5, stop).start()
 
-    async def identities(self, **kwargs):  # identities @3 () -> (infos :List(Common.IdInformation));
+    async def identities(
+        self, **kwargs
+    ):  # identities @3 () -> (infos :List(Common.IdInformation));
         infos = []
         for s in self._services:
             infos.append({"id": s.id, "name": s.name, "description": s.description})
         return infos
 
-    async def updateIdentity(self, oldId, newInfo, **kwargs):  # updateIdentity @4 (oldId :Text, newInfo :Common.IdInformation);
+    async def updateIdentity(
+        self, oldId, newInfo, **kwargs
+    ):  # updateIdentity @4 (oldId :Text, newInfo :Common.IdInformation);
         for s in self._services:
             if s.id == oldId:
                 s.id = newInfo.id
@@ -119,36 +124,68 @@ class Admin(service_capnp.Admin.Server, common.Identifiable):
                 s.description = newInfo.description
 
 
-async def register_services(con_man: ConnectionManager,
-                            name_to_service: dict,
-                            admin: Admin,
-                            registries: list[dict]):
+async def register_services(
+    con_man: ConnectionManager,
+    name_to_service: dict,
+    admin: Admin,
+    registries: list[dict],
+):
     for name, cap in name_to_service.items():
         for reg in registries:
-            if len(reg.items()) == 0: continue
+            if len(reg.items()) == 0:
+                continue
             try:
                 reg_sr = data["sturdy_ref"]
                 reg_name = data.get("name", "")
                 reg_cat_id = data.get("category_id", "")
-                print("Trying to register service with name:", reg_name, "@ category:", reg_cat_id)
-                registrar = await con_man.try_connect(reg_sr, cast_as=reg_capnp.Registrar)
+                print(
+                    "Trying to register service with name:",
+                    reg_name,
+                    "@ category:",
+                    reg_cat_id,
+                )
+                registrar = await con_man.try_connect(
+                    reg_sr, cast_as=reg_capnp.Registrar
+                )
                 if registrar:
-                    r = await registrar.register(cap=cap, regName=reg_name, categoryId=reg_cat_id)
+                    r = await registrar.register(
+                        cap=cap, regName=reg_name, categoryId=reg_cat_id
+                    )
                     unreg_action = r.unreg
                     rereg_sr = r.reregSR
                     admin.store_unreg_data(name, unreg_action, rereg_sr)
-                    print("Registered service", name, "in category '", reg_cat_id, "' as '", reg_name, "'.")
+                    print(
+                        "Registered service",
+                        name,
+                        "in category '",
+                        reg_cat_id,
+                        "' as '",
+                        reg_name,
+                        "'.",
+                    )
                 else:
                     print("Couldn't connect to registrar at sturdy_ref:", reg_sr)
             except Exception as e:
-                print("Error registering service name:", name, "using data:", reg, ". Exception:", e)
+                print(
+                    "Error registering service name:",
+                    name,
+                    "using data:",
+                    reg,
+                    ". Exception:",
+                    e,
+                )
 
-async def register_vat_at_resolvers(con_man: ConnectionManager, resolvers: list, admin: Admin):
+
+async def register_vat_at_resolvers(
+    con_man: ConnectionManager, resolvers: list, admin: Admin
+):
     for res in resolvers:
         try:
             sr = res["sturdy_ref"]
             print("Trying to register vat at resolver sturdy_ref:", sr)
-            registrar = await con_man.try_connect(sr, cast_as=persistence_capnp.HostPortResolver.Registrar)
+            registrar = await con_man.try_connect(
+                sr, cast_as=persistence_capnp.HostPortResolver.Registrar
+            )
             if registrar:
                 req = registrar.register_request()
                 req.host = con_man.restorer.host
@@ -159,55 +196,66 @@ async def register_vat_at_resolvers(con_man: ConnectionManager, resolvers: list,
                     req.alias = res["alias"]
                 r = await req.send()
                 print(r)
-                #r = await registrar.register(cap=name_to_service[name], regName=service_name,
+                # r = await registrar.register(cap=name_to_service[name], regName=service_name,
                 #                             categoryId=alias)
                 hb = r.heartbeat
                 hb_int = r.secsHeartbeatInterval
+
                 async def heartbeat():
                     while True:
                         await asyncio.sleep(hb_int)
                         print("beat", datetime.now())
                         await hb.beat()
+
                 admin.tasks.append(asyncio.create_task(heartbeat()))
-                #admin.store_unreg_data(name, unreg_action, rereg_sr)
-                print("Registered at resolver vat with vat_id:", con_man.restorer.base64_vat_id,
-                      f"and alias {res['alias']}." if "alias" in res else ".")
+                # admin.store_unreg_data(name, unreg_action, rereg_sr)
+                print(
+                    "Registered at resolver vat with vat_id:",
+                    con_man.restorer.base64_vat_id,
+                    f"and alias {res['alias']}." if "alias" in res else ".",
+                )
             else:
                 print("Couldn't connect to registrar at sturdy_ref:", sr)
         except Exception as e:
             print("Error registering vat. Exception:", e)
 
 
-async def init_and_run_service_from_config(config: dict,
-                                           service,
-                                           restorer: common.Restorer=None,
-                                           con_man: common.ConnectionManager=None,
-                                           run_before_enter_eventloop=None):
+async def init_and_run_service_from_config(
+    config: dict,
+    service,
+    restorer: common.Restorer = None,
+    con_man: common.ConnectionManager = None,
+    run_before_enter_eventloop=None,
+):
     cs = config["service"]
     cv = config["vat"]
-    await init_and_run_service(name_to_service={"service": service},
-                               name_to_service_srs={"service": cs.get("fixed_sturdy_ref_token", None)},
-                               host=cv.get("host", None),
-                               port=cv.get("port", None),
-                               serve_bootstrap=cv.get("serve_bootstrap", True),
-                               registries=cs.get("registries", None),
-                               resolvers=cv.get("resolvers", None),
-                               con_man=con_man,
-                               restorer=restorer,
-                               restorer_container_sr=cv.get("restorer_container_sr", None))
+    await init_and_run_service(
+        name_to_service={"service": service},
+        name_to_service_srs={"service": cs.get("fixed_sturdy_ref_token", None)},
+        host=cv.get("host", None),
+        port=cv.get("port", None),
+        serve_bootstrap=cv.get("serve_bootstrap", True),
+        registries=cs.get("registries", None),
+        resolvers=cv.get("resolvers", None),
+        con_man=con_man,
+        restorer=restorer,
+        restorer_container_sr=cv.get("restorer_container_sr", None),
+    )
 
 
-async def init_and_run_service(name_to_service,
-                               host: str=None, port: int=None,
-                               serve_bootstrap=True,
-                               restorer: common.Restorer=None,
-                               con_man: common.ConnectionManager=None,
-                               name_to_service_srs: dict=None,
-                               run_before_enter_eventloop=None,
-                               restorer_container_sr: str=None,
-                               registries: dict=None,
-                               resolvers: dict=None):
-
+async def init_and_run_service(
+    name_to_service,
+    host: str = None,
+    port: int = None,
+    serve_bootstrap=True,
+    restorer: common.Restorer = None,
+    con_man: common.ConnectionManager = None,
+    name_to_service_srs: dict = None,
+    run_before_enter_eventloop=None,
+    restorer_container_sr: str = None,
+    registries: dict = None,
+    resolvers: dict = None,
+):
     registries = registries if registries else []
     resolvers = resolvers if resolvers else []
 
@@ -219,7 +267,9 @@ async def init_and_run_service(name_to_service,
         name_to_service_srs = {}
 
     if restorer and restorer_container_sr:
-        restorer_container = await con_man.try_connect(restorer_container_sr, cast_as=storage_capnp.Store.Container)
+        restorer_container = await con_man.try_connect(
+            restorer_container_sr, cast_as=storage_capnp.Store.Container
+        )
         if restorer_container:
             restorer.storage_container = restorer_container
             await restorer.init_vat_id_from_container()
@@ -244,7 +294,9 @@ async def init_and_run_service(name_to_service,
         restorer.port = server.sockets[0].getsockname()[1]
 
         for name, s in name_to_service.items():
-            res = await restorer.save_str(cap=s, fixed_sr_token=name_to_service_srs.get(name, None))
+            res = await restorer.save_str(
+                cap=s, fixed_sr_token=name_to_service_srs.get(name, None)
+            )
             name_to_service_srs[name] = res["sturdy_ref"]
             print("service:", name, "sr:", res["sturdy_ref"])
         print("restorer_sr:", restorer.sturdy_ref_str())
@@ -255,14 +307,14 @@ async def init_and_run_service(name_to_service,
             run_before_enter_eventloop()
         async with server:
             await server.serve_forever()
-    #else:
+    # else:
     #    await register_services(con_man, admin, reg_config)
     #    if run_before_enter_eventloop:
     #        run_before_enter_eventloop()
     #    await con_man.manage_forever()
 
 
-def handle_default_service_args_with_dict(parser, config: dict=None):
+def handle_default_service_args_with_dict(parser, config: dict = None):
     args = parser.parse_args()
 
     remove_keys = []
@@ -292,11 +344,19 @@ def handle_default_service_args_with_dict(parser, config: dict=None):
             tk.dump(doc, _)
             exit(0)
     elif args.config_toml is not None:
-        with open(args.config_toml, "r") as f:
+        with open(args.config_toml) as f:
             toml_config = tk.load(f)
-        config.update({ k:v for k, v in toml_config.items() if type(v) is not tk.items.Table})
+        config.update(
+            {k: v for k, v in toml_config.items() if type(v) is not tk.items.Table}
+        )
         if "vat" in toml_config:
-            config.update({f"vat.{k}": v for k, v in toml_config["vat"].items() if type(v) is not tk.items.Table})
+            config.update(
+                {
+                    f"vat.{k}": v
+                    for k, v in toml_config["vat"].items()
+                    if type(v) is not tk.items.Table
+                }
+            )
     else:
         parser.error("argument config_toml: expected path to config TOML file")
 
@@ -305,21 +365,25 @@ def handle_default_service_args_with_dict(parser, config: dict=None):
     return config, args, toml_config
 
 
-def handle_default_service_args(parser,
-                                path_to_template_config=None,
-                                path_to_service_py=None,
-                                relative_path_from_service_py_to_default_configs_folder="default_configs"):
+def handle_default_service_args(
+    parser,
+    path_to_template_config=None,
+    path_to_service_py=None,
+    relative_path_from_service_py_to_default_configs_folder="default_configs",
+):
     args = parser.parse_args()
     # use or construct path to template configuration file
     if not path_to_template_config and path_to_service_py:
-        path_to_template_config = os.path.join(os.path.dirname(path_to_service_py),
-                                               relative_path_from_service_py_to_default_configs_folder,
-                                               os.path.basename(path_to_service_py).replace(".py", ".toml"))
+        path_to_template_config = os.path.join(
+            os.path.dirname(path_to_service_py),
+            relative_path_from_service_py_to_default_configs_folder,
+            os.path.basename(path_to_service_py).replace(".py", ".toml"),
+        )
 
     # if there is a template config, load and use that for default values
     if args.output_toml_config or args.write_toml_config:
         if path_to_template_config:
-            with open(path_to_template_config, "r") as f:
+            with open(path_to_template_config) as f:
                 toml_doc = tk.load(f)
             if args.output_toml_config:
                 print(tk.dumps(toml_doc))
@@ -343,6 +407,7 @@ def handle_default_service_args(parser,
         parser.error("argument config_toml: expected path to config JSON file")
 
     return {}, args
+
 
 def create_default_args_parser(
     component_description: str, default_config_path: str | None = None

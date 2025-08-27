@@ -10,11 +10,12 @@
 #
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-from collections import defaultdict
 import csv
 import json
 import os
+from collections import defaultdict
 from io import StringIO
+
 from zalfmas_common.soil import soil_io
 
 CACHE_REFS = False
@@ -44,9 +45,8 @@ def oid_is_organ(oid):
 
 
 def oid_is_range(oid):
-    return oid["fromLayer"] >= 0 \
-        and oid["toLayer"] >= 0 #\
-        #and oid["fromLayer"] < oid["toLayer"]
+    return oid["fromLayer"] >= 0 and oid["toLayer"] >= 0  # \
+    # and oid["fromLayer"] < oid["toLayer"]
 
 
 def op_to_string(op):
@@ -59,7 +59,7 @@ def op_to_string(op):
         OP_FIRST: "FIRST",
         OP_LAST: "LAST",
         OP_NONE: "NONE",
-        OP_UNDEFINED_OP_: "undef"
+        OP_UNDEFINED_OP_: "undef",
     }.get(op, "undef")
 
 
@@ -71,7 +71,7 @@ def organ_to_string(organ):
         ORGAN_FRUIT: "Fruit",
         ORGAN_STRUCT: "Struct",
         ORGAN_SUGAR: "Sugar",
-        ORGAN_UNDEFINED_ORGAN_: "undef"
+        ORGAN_UNDEFINED_ORGAN_: "undef",
     }.get(organ, "undef")
 
 
@@ -82,9 +82,18 @@ def oid_to_string(oid, include_time_agg):
     if oid_is_organ(oid):
         oss += ", " + organ_to_string(oid["organ"])
     elif oid_is_range(oid):
-        oss += ", [" + str(oid["fromLayer"] + 1) + ", " + str(oid["toLayer"] + 1) \
-        + (", " + op_to_string(oid["layerAggOp"]) if oid["layerAggOp"] != OP_NONE else "") \
-        + "]"
+        oss += (
+            ", ["
+            + str(oid["fromLayer"] + 1)
+            + ", "
+            + str(oid["toLayer"] + 1)
+            + (
+                ", " + op_to_string(oid["layerAggOp"])
+                if oid["layerAggOp"] != OP_NONE
+                else ""
+            )
+            + "]"
+        )
     elif oid["fromLayer"] >= 0:
         oss += ", " + str(oid["fromLayer"] + 1)
     if include_time_agg:
@@ -94,10 +103,9 @@ def oid_to_string(oid, include_time_agg):
     return oss
 
 
-def write_output_header_rows(output_ids,
-                             include_header_row=True,
-                             include_units_row=True,
-                             include_time_agg=False):
+def write_output_header_rows(
+    output_ids, include_header_row=True, include_units_row=True, include_time_agg=False
+):
     """write header rows"""
     row1 = []
     row2 = []
@@ -113,20 +121,30 @@ def write_output_header_rows(output_ids,
             to_layer = from_layer = oid["organ"]
         elif is_range:
             from_layer += 1
-            to_layer += 1     # display 1-indexed layer numbers to users
+            to_layer += 1  # display 1-indexed layer numbers to users
         else:
-            to_layer = from_layer # for aggregated ranges, which aren't being displayed as range
+            to_layer = from_layer  # for aggregated ranges, which aren't being displayed as range
 
-        for i in range(from_layer, to_layer+1):
+        for i in range(from_layer, to_layer + 1):
             str1 = ""
             if is_organ:
-                str1 += (oid["name"] + "/" + organ_to_string(oid["organ"])) if len(oid["displayName"]) == 0 else oid["displayName"]
+                str1 += (
+                    (oid["name"] + "/" + organ_to_string(oid["organ"]))
+                    if len(oid["displayName"]) == 0
+                    else oid["displayName"]
+                )
             elif is_range:
-                str1 += (oid["name"] + "_" + str(i)) if len(oid["displayName"]) == 0 else oid["displayName"]
+                str1 += (
+                    (oid["name"] + "_" + str(i))
+                    if len(oid["displayName"]) == 0
+                    else oid["displayName"]
+                )
             else:
-                str1 += oid["name"] if len(oid["displayName"]) == 0 else oid["displayName"]
+                str1 += (
+                    oid["name"] if len(oid["displayName"]) == 0 else oid["displayName"]
+                )
             row1.append(str1)
-            row4.append("j:" + oid["jsonInput"].replace("\"", ""))
+            row4.append("j:" + oid["jsonInput"].replace('"', ""))
             row3.append("m:" + oid_to_string(oid, include_time_agg))
             row2.append("[" + oid["unit"] + "]")
 
@@ -152,13 +170,23 @@ def write_output(output_ids, values, round_ids=None):
             i = 0
             row = []
             for oid in output_ids:
-                oid_name = oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
+                oid_name = (
+                    oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
+                )
                 j__ = values[i][k]
                 if isinstance(j__, list):
                     for jv_ in j__:
-                        row.append(round(jv_, round_ids[oid_name]) if oid_name in round_ids else jv_)
+                        row.append(
+                            round(jv_, round_ids[oid_name])
+                            if oid_name in round_ids
+                            else jv_
+                        )
                 else:
-                    row.append(round(j__, round_ids[oid_name]) if oid_name in round_ids else j__)
+                    row.append(
+                        round(j__, round_ids[oid_name])
+                        if oid_name in round_ids
+                        else j__
+                    )
                 i += 1
             out.append(row)
     return out
@@ -172,23 +200,34 @@ def write_output_obj(output_ids, values, round_ids=None):
     for obj in values:
         row = []
         for oid in output_ids:
-            oid_name = oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
+            oid_name = (
+                oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
+            )
             j__ = obj.get(oid_name, "")
             if isinstance(j__, list):
                 for jv_ in j__:
-                    row.append(round(jv_, round_ids[oid_name]) if oid_name in round_ids else jv_)
+                    row.append(
+                        round(jv_, round_ids[oid_name])
+                        if oid_name in round_ids
+                        else jv_
+                    )
             else:
-                row.append(round(j__, round_ids[oid_name]) if oid_name in round_ids else j__)
+                row.append(
+                    round(j__, round_ids[oid_name]) if oid_name in round_ids else j__
+                )
         out.append(row)
     return out
 
-def create_csv_strings_from_json_result(msg,
-                                        is_obj_msg=False,
-                                        delimiter=",",
-                                        include_header_row=True,
-                                        include_units_row=True,
-                                        include_time_agg=False,
-                                        round_ids=None):
+
+def create_csv_strings_from_json_result(
+    msg,
+    is_obj_msg=False,
+    delimiter=",",
+    include_header_row=True,
+    include_units_row=True,
+    include_time_agg=False,
+    round_ids=None,
+):
     out = []
 
     for section in msg.get("data", []):
@@ -200,26 +239,32 @@ def create_csv_strings_from_json_result(msg,
         writer = csv.writer(sio, delimiter=delimiter)
 
         if len(results) > 0:
-            for row in write_output_header_rows(output_ids,
-                                                include_header_row=include_header_row,
-                                                include_units_row=include_units_row,
-                                                include_time_agg=include_time_agg):
+            for row in write_output_header_rows(
+                output_ids,
+                include_header_row=include_header_row,
+                include_units_row=include_units_row,
+                include_time_agg=include_time_agg,
+            ):
                 writer.writerow(row)
-            for row in write_output_obj(output_ids, results, round_ids=round_ids) \
-                    if is_obj_msg else write_output(output_ids, results, round_ids=round_ids):
+            for row in (
+                write_output_obj(output_ids, results, round_ids=round_ids)
+                if is_obj_msg
+                else write_output(output_ids, results, round_ids=round_ids)
+            ):
                 writer.writerow(row)
 
-        out.append((orig_spec.replace("\"", ""), sio.getvalue()))
+        out.append((orig_spec.replace('"', ""), sio.getvalue()))
     return out
 
 
 def is_absolute_path(p):
     """is absolute path"""
-    return p.startswith("/") \
-        or (len(p) == 2 and p[1] == ":") \
-        or (len(p) > 2 and p[1] == ":"
-            and (p[2] == "\\"
-                 or p[2] == "/"))
+    return (
+        p.startswith("/")
+        or (len(p) == 2 and p[1] == ":")
+        or (len(p) > 2 and p[1] == ":" and (p[2] == "\\" or p[2] == "/"))
+    )
+
 
 def fix_system_separator(path):
     """fix system separator"""
@@ -232,6 +277,7 @@ def fix_system_separator(path):
         path = new_path
     return new_path
 
+
 def replace_env_vars(path):
     """replace ${ENV_VAR} in path"""
     start_token = "${"
@@ -241,7 +287,7 @@ def replace_env_vars(path):
         end_pos = path.find(end_token, start_pos + 1)
         if end_pos > -1:
             name_start = start_pos + 2
-            env_var_name = path[name_start : end_pos]
+            env_var_name = path[name_start:end_pos]
             env_var_content = os.environ.get(env_var_name, None)
             if env_var_content:
                 path = path.replace(path[start_pos : end_pos + 1], env_var_content)
@@ -264,9 +310,11 @@ def read_and_parse_json_file(path):
         with open(path) as f:
             return {"result": json.load(f), "errors": [], "success": True}
     except:
-        return {"result": {},
-                "errors": ["Error opening file with path : '" + path + "'!"],
-                "success": False}
+        return {
+            "result": {},
+            "errors": ["Error opening file with path : '" + path + "'!"],
+            "success": False,
+        }
 
 
 def parse_json_string(jsonString):
@@ -284,7 +332,6 @@ def find_and_replace_references(root, j):
     errors = []
 
     if isinstance(j, list) and len(j) > 0:
-
         arr = []
         array_is_reference_function = False
 
@@ -293,7 +340,7 @@ def find_and_replace_references(root, j):
                 f = sp[j[0]]
                 array_is_reference_function = True
 
-                #check for nested function invocations in the arguments
+                # check for nested function invocations in the arguments
                 funcArr = []
                 for i in j:
                     res = find_and_replace_references(root, i)
@@ -303,7 +350,7 @@ def find_and_replace_references(root, j):
                             errors.append(err)
                     funcArr.append(res["result"])
 
-                #invoke function
+                # invoke function
                 jaes = f(root, funcArr)
 
                 success = success and jaes["success"]
@@ -311,14 +358,18 @@ def find_and_replace_references(root, j):
                     for err in jaes["errors"]:
                         errors.append(err)
 
-                #if successful try to recurse into result for functions in result
+                # if successful try to recurse into result for functions in result
                 if jaes["success"]:
                     res = find_and_replace_references(root, jaes["result"])
                     success = success and res["success"]
                     if not res["success"]:
                         for err in res["errors"]:
                             errors.append(err)
-                    return {"result": res["result"], "errors": errors, "success": len(errors) == 0}
+                    return {
+                        "result": res["result"],
+                        "errors": errors,
+                        "success": len(errors) == 0,
+                    }
                 else:
                     return {"result": {}, "errors": errors, "success": len(errors) == 0}
 
@@ -350,15 +401,11 @@ def find_and_replace_references(root, j):
 
 
 def supported_patterns():
-
     def ref(root, j):
         if CACHE_REFS and "cache" not in ref.__dict__:
             ref.cache = {}
 
-        if len(j) == 3 \
-         and is_string_type(j[1]) \
-         and is_string_type(j[2]):
-
+        if len(j) == 3 and is_string_type(j[1]) and is_string_type(j[2]):
             key1 = j[1]
             key2 = j[2]
 
@@ -366,19 +413,20 @@ def supported_patterns():
                 return ref.cache[(key1, key2)]
 
             res = find_and_replace_references(root, root[key1][key2])
-            
+
             if CACHE_REFS:
                 ref.cache[(key1, key2)] = res
             return res
 
-        return {"result": j,
-                "errors": ["Couldn't resolve reference: " + json.dumps(j) + "!"],
-                "success" : False}
+        return {
+            "result": j,
+            "errors": ["Couldn't resolve reference: " + json.dumps(j) + "!"],
+            "success": False,
+        }
 
     def from_file(root, j__):
         """include from file"""
         if len(j__) == 2 and is_string_type(j__[1]):
-
             base_path = default_value(root, "include-file-base-path", ".")
             path_to_file = j__[1]
             if not is_absolute_path(path_to_file):
@@ -389,65 +437,118 @@ def supported_patterns():
             if jo_["success"] and not isinstance(jo_["result"], type(None)):
                 return {"result": jo_["result"], "errors": [], "success": True}
 
-            return {"result": j__,
-                    "errors": ["Couldn't include file with path: '" + path_to_file + "'!"],
-                    "success": False}
+            return {
+                "result": j__,
+                "errors": ["Couldn't include file with path: '" + path_to_file + "'!"],
+                "success": False,
+            }
 
-        return {"result": j__,
-                "errors": ["Couldn't include file with function: " + json.dumps(j__) + "!"],
-                "success": False}
+        return {
+            "result": j__,
+            "errors": ["Couldn't include file with function: " + json.dumps(j__) + "!"],
+            "success": False,
+        }
 
     def humus_to_corg(_, j__):
         "convert humus level to corg"
-        if len(j__) == 2 \
-            and isinstance(j__[1], int):
-            return {"result": soil_io.humus_class_to_corg(j__[1]), "errors": [], "success": True}
-        return {"result": j__,
-                "errors": ["Couldn't convert humus level to corg: " + json.dumps(j__) + "!"],
-                "success": False}
+        if len(j__) == 2 and isinstance(j__[1], int):
+            return {
+                "result": soil_io.humus_class_to_corg(j__[1]),
+                "errors": [],
+                "success": True,
+            }
+        return {
+            "result": j__,
+            "errors": [
+                "Couldn't convert humus level to corg: " + json.dumps(j__) + "!"
+            ],
+            "success": False,
+        }
 
     def ld_to_trd(_, j__):
-        if len(j__) == 3 \
-            and isinstance(j__[1], int) \
-            and isinstance(j__[2], float):
-            return {"result": soil_io.bulk_density_class_to_raw_density(j__[1], j__[2]), "errors": [], "success": True}
-        return {"result": j__,
-                "errors": ["Couldn't convert bulk density class to raw density using function: " + json.dumps(j__) + "!"],
-                "success": False}
+        if len(j__) == 3 and isinstance(j__[1], int) and isinstance(j__[2], float):
+            return {
+                "result": soil_io.bulk_density_class_to_raw_density(j__[1], j__[2]),
+                "errors": [],
+                "success": True,
+            }
+        return {
+            "result": j__,
+            "errors": [
+                "Couldn't convert bulk density class to raw density using function: "
+                + json.dumps(j__)
+                + "!"
+            ],
+            "success": False,
+        }
 
     def ka5_to_clay(_, j__):
         if len(j__) == 2 and is_string_type(j__[1]):
-            return {"result": soil_io.ka5_texture_to_clay(j__[1]), "errors": [], "success": True}
-        return {"result": j__,
-                "errors": ["Couldn't get soil clay content from KA5 soil class: " + json.dumps(j__) + "!"],
-                "success": False}
+            return {
+                "result": soil_io.ka5_texture_to_clay(j__[1]),
+                "errors": [],
+                "success": True,
+            }
+        return {
+            "result": j__,
+            "errors": [
+                "Couldn't get soil clay content from KA5 soil class: "
+                + json.dumps(j__)
+                + "!"
+            ],
+            "success": False,
+        }
 
     def ka5_to_sand(_, j__):
         if len(j__) == 2 and is_string_type(j__[1]):
-            return {"result": soil_io.ka5_texture_to_sand(j__[1]), "errors": [], "success": True}
-        return {"result": j__,
-                "errors": ["Couldn't get soil sand content from KA5 soil class: " + json.dumps(j__) + "!"],
-                "success": False}
+            return {
+                "result": soil_io.ka5_texture_to_sand(j__[1]),
+                "errors": [],
+                "success": True,
+            }
+        return {
+            "result": j__,
+            "errors": [
+                "Couldn't get soil sand content from KA5 soil class: "
+                + json.dumps(j__)
+                + "!"
+            ],
+            "success": False,
+        }
 
     def sand_clay_to_lambda(_, j__):
-        if len(j__) == 3 \
-            and isinstance(j__[1], float) \
-            and isinstance(j__[2], float):
-            return {"result": soil_io.sand_and_clay_to_lambda(j__[1], j__[2]), "errors": [], "success": True}
-        return {"result": j__,
-                "errors": ["Couldn't get lambda value from soil sand and clay content: " + json.dumps(j__) + "!"],
-                "success": False}
+        if len(j__) == 3 and isinstance(j__[1], float) and isinstance(j__[2], float):
+            return {
+                "result": soil_io.sand_and_clay_to_lambda(j__[1], j__[2]),
+                "errors": [],
+                "success": True,
+            }
+        return {
+            "result": j__,
+            "errors": [
+                "Couldn't get lambda value from soil sand and clay content: "
+                + json.dumps(j__)
+                + "!"
+            ],
+            "success": False,
+        }
 
     def percent(_, j__):
         if len(j__) == 2 and isinstance(j__[1], float):
             return {"result": j__[1] / 100.0, "errors": [], "success": True}
-        return {"result": j__,
-                "errors": ["Couldn't convert percent to decimal percent value: " + json.dumps(j__) + "!"],
-                "success": False}
+        return {
+            "result": j__,
+            "errors": [
+                "Couldn't convert percent to decimal percent value: "
+                + json.dumps(j__)
+                + "!"
+            ],
+            "success": False,
+        }
 
     if "m" not in supported_patterns.__dict__:
         supported_patterns.m = {
-            #"include-from-db": fromDb
+            # "include-from-db": fromDb
             "include-from-file": from_file,
             "ref": ref,
             "humus_st2corg": humus_to_corg,
@@ -460,7 +561,7 @@ def supported_patterns():
             "KA5-texture-class->sand": ka5_to_sand,
             "sandAndClay2lambda": sand_clay_to_lambda,
             "sand-and-clay->lambda": sand_clay_to_lambda,
-            "%": percent
+            "%": percent,
         }
 
     return supported_patterns.m
@@ -489,11 +590,11 @@ def create_env_json_from_json_config(crop_site_sim):
 
     def add_base_path(j, base_path):
         """add include file base path if not there"""
-        if not "include-file-base-path" in j:
+        if "include-file-base-path" not in j:
             j["include-file-base-path"] = base_path
 
     crop_site_sim2 = {}
-    #collect all errors in all files and don't stop as early as possible
+    # collect all errors in all files and don't stop as early as possible
     errors = set()
     for k, j in crop_site_sim.items():
         if k == "climate":
@@ -518,7 +619,7 @@ def create_env_json_from_json_config(crop_site_sim):
     env = {}
     env["type"] = "Env"
 
-    #store debug mode in env, take from sim.json, but prefer params map
+    # store debug mode in env, take from sim.json, but prefer params map
     env["debugMode"] = simj["debug?"]
 
     cpp = {
@@ -530,7 +631,7 @@ def create_env_json_from_json_config(crop_site_sim):
         "userSoilTransportParameters": sitej["SoilTransportParameters"],
         "userSoilOrganicParameters": sitej["SoilOrganicParameters"],
         "simulationParameters": simj,
-        "siteParameters": sitej["SiteParameters"]
+        "siteParameters": sitej["SiteParameters"],
     }
 
     env["params"] = cpp
@@ -550,7 +651,9 @@ def create_env_json_from_json_config(crop_site_sim):
     return env
 
 
-def create_env_climate_data_dict_from_capnp_time_series_data(ts_header, ts_range, ts_data_transposed):
+def create_env_climate_data_dict_from_capnp_time_series_data(
+    ts_header, ts_range, ts_data_transposed
+):
     """add climate data from capnp time series structures separately to env"""
 
     ts_data = ts_data_transposed

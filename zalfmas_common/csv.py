@@ -15,12 +15,13 @@
 
 import csv
 
+
 def read_csv(path_to_setups_csv, key="id"):
     """read sim setup from csv file"""
     with open(path_to_setups_csv) as _:
         key_to_data = {}
         # determine seperator char
-        dialect = csv.Sniffer().sniff(_.read(), delimiters=';,\t')
+        dialect = csv.Sniffer().sniff(_.read(), delimiters=";,\t")
         _.seek(0)
         # read csv with seperator char
         reader = csv.reader(_, dialect)
@@ -36,4 +37,3 @@ def read_csv(path_to_setups_csv, key="id"):
                 data[header_col] = value
             key_to_data[int(data[key])] = data
         return key_to_data
-

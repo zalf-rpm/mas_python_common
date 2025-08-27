@@ -14,19 +14,18 @@
 
 import asyncio
 import base64
-import capnp
-import io
 import json
-from pathlib import Path
 import os
-import pysodium
 import socket
 import sys
-import time
-import tomlkit as tk
 import urllib.parse as urlp
 import uuid
+
+import capnp
+import pysodium
+import tomlkit as tk
 import zalfmas_capnp_schemas
+
 schema_dir = os.path.dirname(zalfmas_capnp_schemas.__file__)
 if schema_dir not in sys.path:
     sys.path.append(schema_dir)
@@ -39,6 +38,7 @@ def as_sturdy_ref(anypointer):
     if st.type == "sturdyRef":
         return st.value
     return None
+
 
 def get_fbp_attr(ip, attr_name):
     if ip.attributes and attr_name:
@@ -98,28 +98,48 @@ def update_config(config, argv, print_config=False, allow_new_keys=False):
             print(config)
 
 
-def create_service_toml_config(header_comment: str = None,
-                               id = None, name=None, description=None,
-                               host=None, port=None, serve_bootstrap=None,
-                               fixed_sturdy_ref_token=None,
-                               reg_sturdy_ref=None, reg_category=None,
-                               resolver_sturdy_ref=None, resolver_alias=None) -> tk.TOMLDocument:
+def create_service_toml_config(
+    header_comment: str = None,
+    id=None,
+    name=None,
+    description=None,
+    host=None,
+    port=None,
+    serve_bootstrap=None,
+    fixed_sturdy_ref_token=None,
+    reg_sturdy_ref=None,
+    reg_category=None,
+    resolver_sturdy_ref=None,
+    resolver_alias=None,
+) -> tk.TOMLDocument:
     doc = tk.document()
-    doc.add(tk.comment(header_comment if header_comment else "MAS service configuration file"))
+    doc.add(
+        tk.comment(
+            header_comment if header_comment else "MAS service configuration file"
+        )
+    )
     doc.add(tk.nl())
 
     services = tk.aot()
     service = tk.table()
     service["id"] = id if id else str(uuid.uuid4())
     service["name"] = name if name else f"Service {service['id']}"
-    service["description"] = description if description else f"No description for service {service['id']}"
-    service["fixed_sturdy_ref_token"] = fixed_sturdy_ref_token if fixed_sturdy_ref_token else "a_sturdy_ref_token"
+    service["description"] = (
+        description if description else f"No description for service {service['id']}"
+    )
+    service["fixed_sturdy_ref_token"] = (
+        fixed_sturdy_ref_token if fixed_sturdy_ref_token else "a_sturdy_ref_token"
+    )
     services.append(service)
 
     regs = tk.aot()
     regs.name = "services.registries"
     reg = tk.table()
-    reg["sturdy_ref"] = reg_sturdy_ref if reg_sturdy_ref else "capnp://the_host_key@host:port/a_sturdy_ref_token"
+    reg["sturdy_ref"] = (
+        reg_sturdy_ref
+        if reg_sturdy_ref
+        else "capnp://the_host_key@host:port/a_sturdy_ref_token"
+    )
     reg["category"] = reg_category if reg_category else "a registry category"
     regs.append(reg)
 
@@ -129,16 +149,20 @@ def create_service_toml_config(header_comment: str = None,
     resolvers.name = "resolvers"
     res = tk.table()
     res["alias"] = resolver_alias if resolver_alias else "some_alias_for_the_resolver"
-    res["resolver_sturdy_ref"] = reg_category if reg_category else "capnp://the_host_key@host:port/a_sturdy_ref_token"
+    res["resolver_sturdy_ref"] = (
+        reg_category
+        if reg_category
+        else "capnp://the_host_key@host:port/a_sturdy_ref_token"
+    )
     resolvers.append(res)
 
-#    register_at = tk.aot()
-#    register_at.append(tk.item({
-#        "sturdy_ref": reg_sturdy_ref if reg_sturdy_ref else "capnp://the_host_key@host:port/a_sturdy_ref_token",
-#        "category": reg_category if reg_category else "a registry category",
-#    }))
-#    config.add("register_at", register_at)
-#    config.add("caps", caps)
+    #    register_at = tk.aot()
+    #    register_at.append(tk.item({
+    #        "sturdy_ref": reg_sturdy_ref if reg_sturdy_ref else "capnp://the_host_key@host:port/a_sturdy_ref_token",
+    #        "category": reg_category if reg_category else "a registry category",
+    #    }))
+    #    config.add("register_at", register_at)
+    #    config.add("caps", caps)
 
     vat = tk.table()
     vat["host"] = host if host else "localhost"
@@ -158,22 +182,33 @@ def sturdy_ref_str(vat_sign_pk, host, port, sr_token=None):
         vat_id=base64.urlsafe_b64encode(vat_sign_pk).decode("utf-8"),
         host=host,
         port=port,
-        sr_token="/" + sr_token if sr_token else ""
+        sr_token="/" + sr_token if sr_token else "",
     )
 
 
 def sturdy_ref_str_from_sr(sturdy_ref):
     sign_pk = bytearray(32)
-    sign_pk[0:8] = sturdy_ref.vat.id.publicKey0.to_bytes(8, byteorder=sys.byteorder, signed=False)
-    sign_pk[8:16] = sturdy_ref.vat.id.publicKey1.to_bytes(8, byteorder=sys.byteorder, signed=False)
-    sign_pk[16:24] = sturdy_ref.vat.id.publicKey2.to_bytes(8, byteorder=sys.byteorder, signed=False)
-    sign_pk[24:32] = sturdy_ref.vat.id.publicKey3.to_bytes(8, byteorder=sys.byteorder, signed=False)
-    return sturdy_ref_str(sign_pk, sturdy_ref.vat.address.host, sturdy_ref.vat.address.port,
-                          sturdy_ref.localRef.text)
+    sign_pk[0:8] = sturdy_ref.vat.id.publicKey0.to_bytes(
+        8, byteorder=sys.byteorder, signed=False
+    )
+    sign_pk[8:16] = sturdy_ref.vat.id.publicKey1.to_bytes(
+        8, byteorder=sys.byteorder, signed=False
+    )
+    sign_pk[16:24] = sturdy_ref.vat.id.publicKey2.to_bytes(
+        8, byteorder=sys.byteorder, signed=False
+    )
+    sign_pk[24:32] = sturdy_ref.vat.id.publicKey3.to_bytes(
+        8, byteorder=sys.byteorder, signed=False
+    )
+    return sturdy_ref_str(
+        sign_pk,
+        sturdy_ref.vat.address.host,
+        sturdy_ref.vat.address.port,
+        sturdy_ref.localRef.text,
+    )
 
 
 class ReleaseSturdyRef(persistence_capnp.Persistent.ReleaseSturdyRef.Server):
-
     def __init__(self, release_func):
         self._release_func = release_func
 
@@ -190,11 +225,10 @@ def get_public_ip(connect_to_host="8.8.8.8", connect_to_port=53):
 
 
 class Restorer(persistence_capnp.Restorer.Server):
-
     def __init__(self):
         self._issued_sr_tokens = {}  # sr_token to {"sealed_for": owner_guid, "cap": capability}
         self._actions = []
-        self._host = get_public_ip() #socket.gethostbyname(socket.gethostname())  # socket.getfqdn() #gethostname()
+        self._host = get_public_ip()  # socket.gethostbyname(socket.gethostname())  # socket.getfqdn() #gethostname()
         self._port = None
         self._sign_pk, self._sign_sk = pysodium.crypto_sign_keypair()
         # self._box_pk, self._box_sk = pysodium.crypto_box_keypair()
@@ -248,7 +282,9 @@ class Restorer(persistence_capnp.Restorer.Server):
 
     async def store_port(self):
         if self.storage_container and self.re_store_port:
-            return await self.storage_container.getEntry(key="port").entry.setValue(value={"uint16Value": self.port})
+            return await self.storage_container.getEntry(key="port").entry.setValue(
+                value={"uint16Value": self.port}
+            )
 
     @property
     def host(self):
@@ -259,7 +295,8 @@ class Restorer(persistence_capnp.Restorer.Server):
         self._host = h
 
     async def init_port_from_container(self):
-        if not self.re_store_port: return
+        if not self.re_store_port:
+            return
         try:
             val = await self.storage_container.getEntry(key="port").entry.getValue()
             if not val.isUnset:
@@ -279,8 +316,12 @@ class Restorer(persistence_capnp.Restorer.Server):
                     sign_key = self._sign_pk
                 elif key == "vatSignSK":
                     sign_key = self._sign_sk
-                vat_sign_key_req = self.storage_container.addEntry_request(key=key, replaceExisting=True)
-                pkb = vat_sign_key_req.init("value").init("uint8ListValue", len(sign_key))
+                vat_sign_key_req = self.storage_container.addEntry_request(
+                    key=key, replaceExisting=True
+                )
+                pkb = vat_sign_key_req.init("value").init(
+                    "uint8ListValue", len(sign_key)
+                )
                 for i in range(len(sign_key)):
                     pkb[i] = sign_key[i]
                 return (await vat_sign_key_req.send()).success
@@ -307,7 +348,6 @@ class Restorer(persistence_capnp.Restorer.Server):
         except Exception as e:
             print("Couldn't initialize vat id from container.", e)
 
-
     def set_owner_guid(self, owner_guid, owner_box_pk):
         self._owner_guid_to_sign_pk[owner_guid] = owner_box_pk
 
@@ -330,10 +370,12 @@ class Restorer(persistence_capnp.Restorer.Server):
             elif "cap" in sr_data:
                 return sr_data["cap"]
             elif len(sr_data["unsaveSRToken"]) > 0:  # restore an unsave action
+
                 async def release_sr(sr_data):
                     res1 = await self.unsave(sr_data["restore_token"])
                     res2 = await self.unsave(sr_data["unsave_sr_token"])
                     return res1 and res2
+
                 unsave_action = ReleaseSturdyRef(release_sr)
                 sr_data["cap"] = unsave_action
                 return unsave_action
@@ -342,7 +384,7 @@ class Restorer(persistence_capnp.Restorer.Server):
                     cap = self._restore_callback(sr_data["restoreToken"])
                     sr_data["cap"] = cap
                     return cap
-                except Exception as e:
+                except Exception:
                     pass
             return None
 
@@ -366,8 +408,9 @@ class Restorer(persistence_capnp.Restorer.Server):
             # and we know about that owner
             if owner_guid in self._owner_guid_to_sign_pk:
                 try:
-                    unsigned_sr_token = pysodium.crypto_sign_open(sr_token.data,
-                                                                  self._owner_guid_to_sign_pk[owner_guid])
+                    unsigned_sr_token = pysodium.crypto_sign_open(
+                        sr_token.data, self._owner_guid_to_sign_pk[owner_guid]
+                    )
                 except ValueError:
                     return None
                 data = self._issued_sr_tokens.get(unsigned_sr_token, None)
@@ -405,67 +448,109 @@ class Restorer(persistence_capnp.Restorer.Server):
                         "publicKey2": self._vat_id[2],
                         "publicKey3": self._vat_id[3],
                     },
-                    "address": {
-                        "host": self.host,
-                        "port": self.port
-                    }
+                    "address": {"host": self.host, "port": self.port},
                 },
-                "localRef": {"text": sr_token if sr_token else ""}
+                "localRef": {"text": sr_token if sr_token else ""},
             }
         }
 
-    async def save_cap(self, cap, fixed_sr_token=None, seal_for_owner_guid=None, create_unsave=True, restore_token=None,
-                       store_sturdy_refs=True):
+    async def save_cap(
+        self,
+        cap,
+        fixed_sr_token=None,
+        seal_for_owner_guid=None,
+        create_unsave=True,
+        restore_token=None,
+        store_sturdy_refs=True,
+    ):
         sr_token = fixed_sr_token if fixed_sr_token else str(uuid.uuid4())
         data = {"ownerGuid": seal_for_owner_guid, "restoreToken": restore_token}
         self._issued_sr_tokens[sr_token] = {**data, "cap": cap}
         store_proms = []
         if self.storage_container:
-            #sv_req = self.storage_container.getEntry(key=sr_token).entry.setValue_request()
-            #sv_req.init("value").textValue = json.dumps(data)
-            #store_proms.append(sv_req.send().then(lambda resp: resp.success))
-            success = (await self.storage_container.getEntry(key=sr_token).entry.setValue(
-                value={"textValue": json.dumps(data)})).success
+            # sv_req = self.storage_container.getEntry(key=sr_token).entry.setValue_request()
+            # sv_req.init("value").textValue = json.dumps(data)
+            # store_proms.append(sv_req.send().then(lambda resp: resp.success))
+            success = (
+                await self.storage_container.getEntry(key=sr_token).entry.setValue(
+                    value={"textValue": json.dumps(data)}
+                )
+            ).success
 
         unsave_sr_token = None
         if create_unsave:
             unsave_sr_token = str(uuid.uuid4())
+
             async def release_sr():
                 res1 = await self.unsave(sr_token)
                 res2 = await self.unsave(unsave_sr_token)
                 return res1 and res2
+
             unsave_action = ReleaseSturdyRef(release_sr)
-            udata = {"ownerGuid": seal_for_owner_guid, "restoreToken": restore_token, "unsaveSRToken": unsave_sr_token}
+            udata = {
+                "ownerGuid": seal_for_owner_guid,
+                "restoreToken": restore_token,
+                "unsaveSRToken": unsave_sr_token,
+            }
             self._issued_sr_tokens[unsave_sr_token] = {**udata, "cap": unsave_action}
             if self.storage_container:
-                #sv_req = self.storage_container.getEntry(key=unsave_sr_token).entry.setValue_request()
-                #sv_req.init("value").textValue = json.dumps(udata)
-                #store_proms.append(sv_req.send().then(lambda resp: resp.success))
-                success = (await self.storage_container.getEntry(key=unsave_sr_token).entry.setValue(
-                    value={"textValue": json.dumps(udata)})).success
+                # sv_req = self.storage_container.getEntry(key=unsave_sr_token).entry.setValue_request()
+                # sv_req.init("value").textValue = json.dumps(udata)
+                # store_proms.append(sv_req.send().then(lambda resp: resp.success))
+                success = (
+                    await self.storage_container.getEntry(
+                        key=unsave_sr_token
+                    ).entry.setValue(value={"textValue": json.dumps(udata)})
+                ).success
 
         return sr_token, unsave_sr_token
 
-
-    async def save(self, cap, fixed_sr_token=None, seal_for_owner_guid=None, create_unsave=True, restore_token=None,
-                   store_sturdy_refs=True):
-
-        sr_token, unsave_sr_token = await self.save_cap(cap, fixed_sr_token, seal_for_owner_guid, create_unsave,
-                                                        restore_token, store_sturdy_refs)
+    async def save(
+        self,
+        cap,
+        fixed_sr_token=None,
+        seal_for_owner_guid=None,
+        create_unsave=True,
+        restore_token=None,
+        store_sturdy_refs=True,
+    ):
+        sr_token, unsave_sr_token = await self.save_cap(
+            cap,
+            fixed_sr_token,
+            seal_for_owner_guid,
+            create_unsave,
+            restore_token,
+            store_sturdy_refs,
+        )
         return {
             "sturdy_ref": self.sturdy_ref(sr_token),
-            "unsave_sr": self.sturdy_ref(unsave_sr_token) if create_unsave else None
+            "unsave_sr": self.sturdy_ref(unsave_sr_token) if create_unsave else None,
         }
 
-    async def save_str(self, cap, fixed_sr_token=None, seal_for_owner_guid=None, create_unsave=True,
-                       restore_token=None, store_sturdy_refs=True):
-        sr_token, unsave_sr_token = await self.save_cap(cap, fixed_sr_token, seal_for_owner_guid, create_unsave,
-                                                        restore_token, store_sturdy_refs)
+    async def save_str(
+        self,
+        cap,
+        fixed_sr_token=None,
+        seal_for_owner_guid=None,
+        create_unsave=True,
+        restore_token=None,
+        store_sturdy_refs=True,
+    ):
+        sr_token, unsave_sr_token = await self.save_cap(
+            cap,
+            fixed_sr_token,
+            seal_for_owner_guid,
+            create_unsave,
+            restore_token,
+            store_sturdy_refs,
+        )
         return {
             "sturdy_ref": self.sturdy_ref_str(sr_token),
             "sr_token": sr_token,
-            "unsave_sr": self.sturdy_ref_str(unsave_sr_token) if create_unsave else None,
-            "unsave_sr_token": unsave_sr_token if create_unsave else None
+            "unsave_sr": self.sturdy_ref_str(unsave_sr_token)
+            if create_unsave
+            else None,
+            "unsave_sr_token": unsave_sr_token if create_unsave else None,
         }
 
     async def unsave(self, sr_token, owner_guid=None):
@@ -473,7 +558,9 @@ class Restorer(persistence_capnp.Restorer.Server):
         if owner_guid:
             # and we know about that owner
             if owner_guid in self._owner_guid_to_sign_pk:
-                verified_sr_token = pysodium.crypto_sign_open(sr_token, self._owner_guid_to_sign_pk[owner_guid])
+                verified_sr_token = pysodium.crypto_sign_open(
+                    sr_token, self._owner_guid_to_sign_pk[owner_guid]
+                )
                 data = self._issued_sr_tokens.get(verified_sr_token, None)
                 # and that known owner was actually the one who sealed the token
                 if data and owner_guid == data["ownerGuid"]:
@@ -499,17 +586,19 @@ class Restorer(persistence_capnp.Restorer.Server):
     #   localRef @0 :SturdyRef.Token;
     #   sealedBy @1 :SturdyRef.Owner;
     # }
-    async def restore_context(self, context):  # restore @0 RestoreParams -> (cap :Capability);
+    async def restore_context(
+        self, context
+    ):  # restore @0 RestoreParams -> (cap :Capability);
         owner_guid = context.params.sealedBy
-        context.results.cap = await self.get_cap_from_sr_token(context.params.localRef,
-                                                               owner_guid=owner_guid.guid if owner_guid else None)
+        context.results.cap = await self.get_cap_from_sr_token(
+            context.params.localRef, owner_guid=owner_guid.guid if owner_guid else None
+        )
 
 
 class Identifiable(common_capnp.Identifiable.Server):
-
     def __init__(self, id=None, name=None, description=None):
         self._id = id if id else str(uuid.uuid4())
-        self._name = name if name else "Unnamed_{}".format(self._id)
+        self._name = name if name else f"Unnamed_{self._id}"
         self._description = description if description else ""
         self._init_info_func = None
 
@@ -555,7 +644,6 @@ class Identifiable(common_capnp.Identifiable.Server):
 
 
 class Factory(Identifiable):
-
     def __init__(self, id=None, name=None, description=None):
         Identifiable.__init__(self, id, name, description)
 
@@ -584,7 +672,6 @@ class Factory(Identifiable):
 
 
 class Persistable(persistence_capnp.Persistent.Server):
-
     def __init__(self, restorer=None):
         self._restorer = restorer
 
@@ -607,7 +694,6 @@ class Persistable(persistence_capnp.Persistent.Server):
 
 
 class ConnectionManager:
-
     def __init__(self, restorer=None):
         self._connections = {}
         self._restorer = restorer if restorer else Restorer()
@@ -662,22 +748,30 @@ class ConnectionManager:
             if host_port in self._connections:
                 bootstrap_cap = self._connections[host_port]
             else:
-                connection = await capnp.AsyncIoStream.create_connection(host=host, port=port)
+                connection = await capnp.AsyncIoStream.create_connection(
+                    host=host, port=port
+                )
                 bootstrap_cap = capnp.TwoPartyClient(connection).bootstrap()
                 self._connections[host_port] = bootstrap_cap
 
             if sr_token:
                 restorer = bootstrap_cap.cast_as(persistence_capnp.Restorer)
-                #y = await restorer.restore()
-                #rr = restorer.restore_request()
-                #rr.localRef = {"text": sr_token}
-                #x = await rr.send()
-                dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
-                #res_req = restorer.restore_request()
+                # y = await restorer.restore()
+                # rr = restorer.restore_request()
+                # rr.localRef = {"text": sr_token}
+                # x = await rr.send()
+                dyn_obj_reader = (
+                    await restorer.restore(localRef={"text": sr_token})
+                ).cap
+                # res_req = restorer.restore_request()
                 # res_req.localRef = {"text": sr_token}
                 # dyn_obj_reader = res_req.send().wait().cap
                 if dyn_obj_reader is not None:
-                    return dyn_obj_reader.as_interface(cast_as) if cast_as else dyn_obj_reader
+                    return (
+                        dyn_obj_reader.as_interface(cast_as)
+                        if cast_as
+                        else dyn_obj_reader
+                    )
             else:
                 return bootstrap_cap.cast_as(cast_as) if cast_as else bootstrap_cap
 
@@ -687,7 +781,14 @@ class ConnectionManager:
 
         return None
 
-    async def try_connect(self, sturdy_ref, cast_as=None, retry_count=10, retry_secs=5, print_retry_msgs=True):
+    async def try_connect(
+        self,
+        sturdy_ref,
+        cast_as=None,
+        retry_count=10,
+        retry_secs=5,
+        print_retry_msgs=True,
+    ):
         while True:
             try:
                 cap = await self.connect(sturdy_ref, cast_as=cast_as)
@@ -704,6 +805,7 @@ class ConnectionManager:
                 print(f"Trying to connect to {sturdy_ref} again in {retry_secs} secs!")
             await asyncio.sleep(retry_secs)
             retry_secs += 1
+
 
 # very questionable if this is a good idea ... too many problems pop up when loading schemas dynamically
 def load_capnp_module(path_and_type, def_type="Text", new_message=False, **kwargs):
@@ -724,7 +826,9 @@ def load_capnp_module(path_and_type, def_type="Text", new_message=False, **kwarg
                 type_name, params = type_name_and_params
             else:
                 type_name = type_name_and_params[0]
-            capnp_module = capnp.load(os.path.join(capnp_module_path, capnp_module_name))#, imports=sys.path)
+            capnp_module = capnp.load(
+                os.path.join(capnp_module_path, capnp_module_name)
+            )  # , imports=sys.path)
             capnp_type = capnp_module.__dict__.get(type_name, def_type)
             if new_message:
                 if params:
