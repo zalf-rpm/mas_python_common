@@ -10,17 +10,14 @@
 #
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-import capnp
-from collections import defaultdict
 import os
-from pathlib import Path
-from pyproj import CRS, Transformer
 import sys
+from collections import defaultdict
 
 import zalfmas_capnp_schemas
+from pyproj import CRS, Transformer
 
 sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
-import common_capnp
 import geo_capnp
 
 
@@ -31,7 +28,7 @@ def name_to_struct_instance(name, x=None, y=None, default=None):
         c = geo_capnp.Point2D.new_message()
         if x:
             c.x = x
-        if y: 
+        if y:
             c.y = y
     elif lname == "latlon" or name == "wgs84":
         c = geo_capnp.LatLonCoord.new_message()
@@ -104,12 +101,11 @@ def name_to_crs(name, default=None):
         "gk4": CRS.from_epsg(geo_capnp.EPSG.gk4),
         "gk5": CRS.from_epsg(geo_capnp.EPSG.gk5),
         "utm21s": CRS.from_epsg(geo_capnp.EPSG.utm21S),
-        "utm32n": CRS.from_epsg(geo_capnp.EPSG.utm32N)
+        "utm32n": CRS.from_epsg(geo_capnp.EPSG.utm32N),
     }.get(name.lower(), default)
 
 
 def geo_coord_to_latlon(geo_coord):
-
     if not hasattr(geo_coord_to_latlon, "gk_cache"):
         geo_coord_to_latlon.gk_cache = {}
     if not hasattr(geo_coord_to_latlon, "utm_cache"):
@@ -122,7 +118,9 @@ def geo_coord_to_latlon(geo_coord):
         meridian = geo_coord.gk.meridianNo
         if meridian not in geo_coord_to_latlon.gk_cache:
             gk_crs = CRS.from_epsg(geo_capnp.EPSG["gk" + str(meridian)])
-            trans = geo_coord_to_latlon.gk_cache[meridian] = Transformer.from_crs(gk_crs, geo_coord_to_latlon.latlon_crs, always_xy=True)
+            trans = geo_coord_to_latlon.gk_cache[meridian] = Transformer.from_crs(
+                gk_crs, geo_coord_to_latlon.latlon_crs, always_xy=True
+            )
         else:
             trans = geo_coord_to_latlon.gk_cache[meridian]
         lon, lat = trans.transform(geo_coord.gk.r, geo_coord.gk.h)
@@ -132,13 +130,14 @@ def geo_coord_to_latlon(geo_coord):
         utm_id = str(geo_coord.utm.zone) + geo_coord.utm.latitudeBand
         if utm_id not in geo_coord_to_latlon.utm_cache:
             utm_crs = CRS.from_epsg(geo_capnp.EPSG["utm" + utm_id])
-            trans = geo_coord_to_latlon.utm_cache[utm_id] = Transformer.from_crs(utm_crs, geo_coord_to_latlon.latlon_crs, always_xy=True)
+            trans = geo_coord_to_latlon.utm_cache[utm_id] = Transformer.from_crs(
+                utm_crs, geo_coord_to_latlon.latlon_crs, always_xy=True
+            )
         else:
             trans = geo_coord_to_latlon.utm_cache[utm_id]
         lon, lat = trans.transform(geo_coord.utm.r, geo_coord.utm.h)
 
     return lat, lon
-
 
 
 def transform_from_to_geo_coord(from_coord, to_name, default=None):
@@ -148,17 +147,32 @@ def transform_from_to_geo_coord(from_coord, to_name, default=None):
     to_coord = default
     from_coord_schema = from_coord.schema
     if from_coord_schema == geo_capnp.LatLonCoord.schema:
-        trans = transform_from_to_geo_coord.cache["latlon"].setdefault(to_name, Transformer.from_crs(name_to_crs("latlon"), name_to_crs(to_name), always_xy=True))
+        trans = transform_from_to_geo_coord.cache["latlon"].setdefault(
+            to_name,
+            Transformer.from_crs(
+                name_to_crs("latlon"), name_to_crs(to_name), always_xy=True
+            ),
+        )
         res = trans.transform(*get_xy(from_coord))
         to_coord = name_to_struct_instance(to_name, x=res[0], y=res[1])
     elif from_coord_schema == geo_capnp.UTMCoord.schema:
         utm_id = "utm" + str(from_coord.zone) + from_coord.latitudeBand
-        trans = transform_from_to_geo_coord.cache[utm_id].setdefault(to_name, Transformer.from_crs(name_to_crs(utm_id), name_to_crs(to_name), always_xy=True))
+        trans = transform_from_to_geo_coord.cache[utm_id].setdefault(
+            to_name,
+            Transformer.from_crs(
+                name_to_crs(utm_id), name_to_crs(to_name), always_xy=True
+            ),
+        )
         res = trans.transform(*get_xy(from_coord))
         to_coord = name_to_struct_instance(to_name, x=res[0], y=res[1])
     elif from_coord_schema == geo_capnp.GKCoord.schema:
         gk_id = "gk" + str(from_coord.meridian)
-        trans = transform_from_to_geo_coord.cache[gk_id].setdefault(to_name, Transformer.from_crs(name_to_crs(gk_id), name_to_crs(to_name), always_xy=True))
+        trans = transform_from_to_geo_coord.cache[gk_id].setdefault(
+            to_name,
+            Transformer.from_crs(
+                name_to_crs(gk_id), name_to_crs(to_name), always_xy=True
+            ),
+        )
         res = trans.transform(*get_xy(from_coord))
         to_coord = name_to_struct_instance(to_name, x=res[0], y=res[1])
     return to_coord

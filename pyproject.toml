@@ -23,3 +23,12 @@ build-backend = "poetry.core.masonry.api"
 # Example for referencing local packages in editable mode
 # [tool.poetry.dependencies]
 # zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.12.10"
+
+[tool.ruff]
+target-version = "py310"
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
