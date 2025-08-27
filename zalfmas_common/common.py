@@ -596,6 +596,7 @@ class Restorer(persistence_capnp.Restorer.Server):
 
 
 class Identifiable(common_capnp.Identifiable.Server):
+
     def __init__(self, id=None, name=None, description=None):
         self._id = id if id else str(uuid.uuid4())
         self._name = name if name else f"Unnamed_{self._id}"
@@ -710,17 +711,21 @@ class ConnectionManager:
             host = None
             port = None
             sr_token = None
+            resolve_b64_vat_id_or_alias = None
             owner_guid = None
             bootstrap_interface_id = None
             sturdy_ref_interface_id = None
 
             if isinstance(sturdy_ref, str):
                 # we assume that a sturdy ref url looks always like
+                # (for normal sturdy ref)
                 # capnp://vat-id_base64-curve25519-public-key@host:port/sturdy-ref-token
+                # or (for resolver address)
+                # capnp://vat-id_base64-curve25519-public-key@host:port/to-be-resolved-vat-id_base64_or_alias/sturdy-ref-token
+                # and
                 # ?owner_guid = optional_owner_global_unique_id
                 # & b_iid = optional_bootstrap_interface_id
                 # & sr_iid = optional_the_sturdy_refs_remote_interface_id
-                # capnp://vat-id_base64-curve25519-public-key@host:port/sturdy-ref-token_base64
                 url = urlp.urlparse(sturdy_ref)
 
                 if url.scheme == "capnp":
@@ -732,11 +737,15 @@ class ConnectionManager:
                         owner_guid = q.get("owner_guid", None)
                         bootstrap_interface_id = q.get("b_iid", None)
                         sturdy_ref_interface_id = q.get("sr_iid", None)
-                    if len(url.path) > 1:
-                        sr_token = url.path[1:]
-                        # sr_token is base64 encoded if there's an owner (because of signing)
-                        if owner_guid:
-                            sr_token = base64.urlsafe_b64decode(sr_token + "==")
+                    path_segs = url.path[1:].split("/")
+                    if len(path_segs) == 1:
+                        sr_token = path_segs[0]
+                    elif len(path_segs) == 2:
+                        resolve_b64_vat_id_or_alias = path_segs[0]
+                        sr_token = path_segs[1]
+                    # sr_token is base64 encoded if there's an owner (because of signing)
+                    if sr_token and owner_guid:
+                        sr_token = base64.urlsafe_b64decode(sr_token + "==")
             else:
                 vat_path = sturdy_ref.vat
                 # vat_id = vat_path.id
@@ -754,18 +763,26 @@ class ConnectionManager:
                 bootstrap_cap = capnp.TwoPartyClient(connection).bootstrap()
                 self._connections[host_port] = bootstrap_cap
 
-            if sr_token:
+            if resolve_b64_vat_id_or_alias:
+                resolver = bootstrap_cap.cast_as(persistence_capnp.HostPortResolver)
+                # node = resolver.schema.node
+                # if node.displayName == f"{persistence_capnp.__name__}:HostPortResolver": # and node.id == 12289639464158895519
+                hp = await resolver.resolve(id=resolve_b64_vat_id_or_alias)
+                return await self.try_connect(
+                    persistence_capnp.SturdyRef.new_message(
+                        vat={"address": {"host": hp.host, "port": hp.port}},
+                        localRef={"text": sr_token},
+                    ),
+                    cast_as=cast_as,
+                )
+            elif sr_token:
                 restorer = bootstrap_cap.cast_as(persistence_capnp.Restorer)
-                # y = await restorer.restore()
-                # rr = restorer.restore_request()
-                # rr.localRef = {"text": sr_token}
-                # x = await rr.send()
                 dyn_obj_reader = (
                     await restorer.restore(localRef={"text": sr_token})
                 ).cap
-                # res_req = restorer.restore_request()
-                # res_req.localRef = {"text": sr_token}
-                # dyn_obj_reader = res_req.send().wait().cap
+                #node = restorer.schema.node
+                #if node.displayName == f"{persistence_capnp.__name__}:Restorer": # and node.id == 11508422749279825468
+                dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
                 if dyn_obj_reader is not None:
                     return (
                         dyn_obj_reader.as_interface(cast_as)

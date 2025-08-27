@@ -29,6 +29,7 @@ sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
 import registry_capnp as reg_capnp
 import service_capnp
 import storage_capnp
+import persistence_capnp
 
 
 class AdministrableService:
@@ -135,9 +136,9 @@ async def register_services(
             if len(reg.items()) == 0:
                 continue
             try:
-                reg_sr = data["sturdy_ref"]
-                reg_name = data.get("name", "")
-                reg_cat_id = data.get("category_id", "")
+                reg_sr = reg["sturdy_ref"]
+                reg_name = reg.get("name", "")
+                reg_cat_id = reg.get("category_id", "")
                 print(
                     "Trying to register service with name:",
                     reg_name,
