@@ -11,6 +11,7 @@
 #
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
+import gzip
 import json
 
 import numpy as np
@@ -18,18 +19,28 @@ from pyproj import CRS, Transformer
 from scipy.interpolate import NearestNDInterpolator
 
 
-def read_header(path_to_ascii_grid_file):
+def read_header(path_to_ascii_grid_file, no_of_header_lines=6):
     """read metadata from esri ascii grid file"""
-    metadata = {}
-    header_str = ""
+
+    def read_header_from(f):
+        possible_headers = ["ncols", "nrows", "xllcorner", "yllcorner", "cellsize", "nodata_value"]
+        metadata = {}
+        header_str = ""
+        for i in range(0, no_of_header_lines):
+            line = f.readline()
+            s_line = [x for x in line.split() if len(x) > 0]
+            key = s_line[0].strip().lower()
+            if len(s_line) > 1 and key in possible_headers:
+                metadata[key] = float(s_line[1].strip())
+                header_str += line
+        return metadata, header_str
+
+    if path_to_ascii_grid_file[-3:] == ".gz":
+        with gzip.open(path_to_ascii_grid_file, mode="rt") as _:
+            return read_header_from(_)
+
     with open(path_to_ascii_grid_file) as _:
-        for i in range(0, 6):
-            line = _.readline()
-            header_str += line
-            sline = [x for x in line.split() if len(x) > 0]
-            if len(sline) > 1:
-                metadata[sline[0].strip().lower()] = float(sline[1].strip())
-    return metadata, header_str
+        return read_header_from(_)
 
 
 def create_interpolator_from_rect_grid(
@@ -122,6 +133,42 @@ def load_grid_and_metadata_from_ascii_grid(
     grid = np.loadtxt(path_to_ascii_grid, dtype=datatype, skiprows=no_of_header_rows)
     return (grid, metadata)
 
+def load_grid_cached(path_to_grid, val_type, print_path=False):
+    if not hasattr(load_grid_cached, "cache"):
+        load_grid_cached.cache = {}
+
+    if path_to_grid in load_grid_cached.cache:
+        return load_grid_cached.cache[path_to_grid]
+
+    md, _ = read_header(path_to_grid)
+    grid = np.loadtxt(path_to_grid, dtype=type, skiprows=len(md))
+    print("read: ", path_to_grid)
+    ll0r = get_lat_0_lon_0_resolution_from_grid_metadata(md)
+
+    def col(lon):
+        return int((lon - ll0r["lon_0"]) / ll0r["res"])
+
+    def row(lat):
+        return int((ll0r["lat_0"] - lat) / ll0r["res"])
+
+    def value(lat, lon, return_no_data=False):
+        c = col(lon)
+        r = row(lat)
+        if 0 <= r < md["nrows"] and 0 <= c < md["ncols"]:
+            val = val_type(grid[r, c])
+            if val != md["nodata_value"] or return_no_data:
+                return val
+        return None
+
+    cache_entry = {
+        "metadata": md, "grid": grid, "ll0r": ll0r,
+        "col": lambda lon: col(lon),
+        "row": lambda lat: row(lat),
+        "value": lambda lat, lon, ret_no_data: value(lat, lon, ret_no_data)
+    }
+    load_grid_cached.cache[path_to_grid] = cache_entry
+    return cache_entry
+
 
 def create_climate_geoGrid_interpolator_from_json_file(
     path_to_latlon_to_rowcol_file, worldGeodeticSys84, geoTargetGrid, cdict
@@ -148,3 +195,11 @@ def create_climate_geoGrid_interpolator_from_json_file(
                 continue
 
         return NearestNDInterpolator(np.array(points), np.array(values))
+
+def get_lat_0_lon_0_resolution_from_grid_metadata(metadata):
+    lat_0 = float(metadata["yllcorner"]) \
+            + (float(metadata["cellsize"]) * float(metadata["nrows"])) \
+            - (float(metadata["cellsize"]) / 2.0)
+    lon_0 = float(metadata["xllcorner"]) + (float(metadata["cellsize"]) / 2.0)
+    resolution = float(metadata["cellsize"])
+    return {"lat_0": lat_0, "lon_0": lon_0, "res": resolution}

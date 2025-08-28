@@ -1,6 +1,6 @@
 [project]
 name = "zalfmas-common"
-version = "0.1.26"
+version = "0.1.28"
 description = "Common code for ZALF MAS projects"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [{ name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de" }]
@@ -23,10 +23,6 @@ build-backend = "poetry.core.masonry.api"
 # Example for referencing local packages in editable mode
 # [tool.poetry.dependencies]
 # zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.12.10"
-
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.12.10"
