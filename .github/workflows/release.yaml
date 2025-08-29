@@ -18,8 +18,8 @@ jobs:
     if: ${{ needs['release-please'].outputs.release_created == 'true' }}
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
-      url: https://test.pypi.org/p/zalfmas-common
+      name: pypi
+      url: https://pypi.org/p/zalfmas-common
     steps:
       # Build + publish Python package to PyPI on release via Trusted Publishing
       - name: Checkout
@@ -35,6 +35,5 @@ jobs:
       - name: Publish to PyPI (Trusted Publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          repository-url: https://test.pypi.org/legacy/
           skip-existing: true
           verbose: true
