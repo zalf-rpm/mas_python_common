@@ -24,13 +24,7 @@ import uuid
 import capnp
 import pysodium
 import tomlkit as tk
-import zalfmas_capnp_schemas
-
-schema_dir = os.path.dirname(zalfmas_capnp_schemas.__file__)
-if schema_dir not in sys.path:
-    sys.path.append(schema_dir)
-import common_capnp
-import persistence_capnp
+from zalfmas_capnp_schemas import common_capnp, persistence_capnp
 
 
 def as_sturdy_ref(anypointer):
@@ -596,7 +590,6 @@ class Restorer(persistence_capnp.Restorer.Server):
 
 
 class Identifiable(common_capnp.Identifiable.Server):
-
     def __init__(self, id=None, name=None, description=None):
         self._id = id if id else str(uuid.uuid4())
         self._name = name if name else f"Unnamed_{self._id}"
@@ -780,9 +773,11 @@ class ConnectionManager:
                 dyn_obj_reader = (
                     await restorer.restore(localRef={"text": sr_token})
                 ).cap
-                #node = restorer.schema.node
-                #if node.displayName == f"{persistence_capnp.__name__}:Restorer": # and node.id == 11508422749279825468
-                dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
+                # node = restorer.schema.node
+                # if node.displayName == f"{persistence_capnp.__name__}:Restorer": # and node.id == 11508422749279825468
+                dyn_obj_reader = (
+                    await restorer.restore(localRef={"text": sr_token})
+                ).cap
                 if dyn_obj_reader is not None:
                     return (
                         dyn_obj_reader.as_interface(cast_as)

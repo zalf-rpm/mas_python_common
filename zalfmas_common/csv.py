@@ -16,6 +16,7 @@
 
 import csv
 
+
 def read_csv(path_to_setups_csv, key="id", key_type=(int,)):
     """read sim setup from csv file"""
     composite_key = type(key) is tuple
@@ -25,7 +26,7 @@ def read_csv(path_to_setups_csv, key="id", key_type=(int,)):
     with open(path_to_setups_csv) as _:
         key_to_data = {}
         # determine seperator char
-        dialect = csv.Sniffer().sniff(_.read(), delimiters=';,\t')
+        dialect = csv.Sniffer().sniff(_.read(), delimiters=";,\t")
         _.seek(0)
         # read csv with seperator char
         reader = csv.reader(_, dialect)
@@ -46,7 +47,9 @@ def read_csv(path_to_setups_csv, key="id", key_type=(int,)):
                     value = key_types[0](value)
                 data[header_col] = value
             if composite_key:
-                key_vals = tuple([key_types.get(i, key_types[0])(data[k]) for i, k in keys.items()])
+                key_vals = tuple(
+                    [key_types.get(i, key_types[0])(data[k]) for i, k in keys.items()]
+                )
             else:
                 key_vals = key_types[0](data[key])
             key_to_data[key_vals] = data

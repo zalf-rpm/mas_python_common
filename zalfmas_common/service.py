@@ -13,23 +13,23 @@
 import argparse
 import asyncio
 import os
-import sys
 import threading
 from datetime import datetime
 
 import capnp
 import tomli as ti
 import tomlkit as tk
-import zalfmas_capnp_schemas
+from zalfmas_capnp_schemas import (
+    persistence_capnp,
+    service_capnp,
+    storage_capnp,
+)
+from zalfmas_capnp_schemas import (
+    registry_capnp as reg_capnp,
+)
 
 from zalfmas_common import common
 from zalfmas_common.common import ConnectionManager
-
-sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
-import registry_capnp as reg_capnp
-import service_capnp
-import storage_capnp
-import persistence_capnp
 
 
 class AdministrableService:

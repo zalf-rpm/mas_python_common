@@ -10,15 +10,10 @@
 #
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
-import os
-import sys
 from collections import defaultdict
 
-import zalfmas_capnp_schemas
 from pyproj import CRS, Transformer
-
-sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
-import geo_capnp
+from zalfmas_capnp_schemas import geo_capnp
 
 
 def name_to_struct_instance(name, x=None, y=None, default=None):
