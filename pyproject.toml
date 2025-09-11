@@ -1,6 +1,6 @@
 [project]
 name = "zalfmas-common"
-version = "0.1.29"
+version = "0.1.30"
 description = "Common code for ZALF MAS projects"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [{ name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de" }]
