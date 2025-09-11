@@ -14,21 +14,16 @@
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 
 import json
-import os
-import sys
 from datetime import date
 
 import numpy as np
-import zalfmas_capnp_schemas
 from pyproj import CRS
 from scipy.interpolate import NearestNDInterpolator
+from zalfmas_capnp_schemas import climate_capnp
 
 from zalfmas_common import common
 from zalfmas_common import rect_ascii_grid_management as ragm
 from zalfmas_common import service as serv
-
-sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
-import climate_capnp
 
 
 def read_header(path_to_ascii_grid_file):
