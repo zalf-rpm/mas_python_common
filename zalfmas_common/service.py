@@ -13,23 +13,23 @@
 import argparse
 import asyncio
 import os
-import sys
 import threading
 from datetime import datetime
 
 import capnp
 import tomli as ti
 import tomlkit as tk
-import zalfmas_capnp_schemas
+from zalfmas_capnp_schemas import (
+    persistence_capnp,
+    service_capnp,
+    storage_capnp,
+)
+from zalfmas_capnp_schemas import (
+    registry_capnp as reg_capnp,
+)
 
 from zalfmas_common import common
 from zalfmas_common.common import ConnectionManager
-
-sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
-import persistence_capnp
-import registry_capnp as reg_capnp
-import service_capnp
-import storage_capnp
 
 
 class AdministrableService:
@@ -367,10 +367,10 @@ def handle_default_service_args_with_dict(parser, config: dict = None):
 
 
 def handle_default_service_args(
-    parser,
-    path_to_template_config=None,
-    path_to_service_py=None,
-    relative_path_from_service_py_to_default_configs_folder="default_configs",
+    parser: argparse.ArgumentParser,
+    path_to_template_config: str | None = None,
+    path_to_service_py: str | None = None,
+    relative_path_from_service_py_to_default_configs_folder: str = "default_configs",
 ):
     args = parser.parse_args()
     # use or construct path to template configuration file

@@ -16,21 +16,15 @@
 import gzip
 import io
 import itertools
-import os
-import sys
 from collections import OrderedDict, deque
 from datetime import date
 
 import pandas as pd
 import psutil
-import zalfmas_capnp_schemas
+from zalfmas_capnp_schemas import climate_capnp, geo_capnp
 
 from zalfmas_common import common
 from zalfmas_common.climate import common_climate_data_capnp_impl as ccdi
-
-sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
-import climate_capnp
-import geo_capnp
 
 
 class TimeSeries(

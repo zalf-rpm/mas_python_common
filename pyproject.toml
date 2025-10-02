@@ -1,6 +1,6 @@
 [project]
 name = "zalfmas-common"
-version = "0.1.29"
+version = "0.1.30"
 description = "Common code for ZALF MAS projects"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [{ name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de" }]
@@ -13,14 +13,15 @@ dependencies = [
   "pandas>=2.2.2,<3.0.0",
   "psutil>=6.1.0,<7.0.0",
   "tomlkit>=0.13.2,<0.14.0",
-  "zalfmas-capnp-schemas (>=0.1.29,<0.2.0)",
+  "zalfmas-capnp-schemas (>=0.1.36,<0.2.0)",
 ]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-# Example for referencing local packages in editable mode
+# Example for referencing local packages in editable mode just uncomment these lines while keeping the above it will overwrite
+# If the line for the package in the dependencies section is commented out it will have no effect
 # [tool.poetry.dependencies]
 # zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
 

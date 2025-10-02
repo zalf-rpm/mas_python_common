@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.30](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.29...v0.1.30) (2025-09-11)
+
+
+### Features
+
+* new import logic ([#10](https://github.com/zalf-rpm/mas_python_common/issues/10)) ([ac97e69](https://github.com/zalf-rpm/mas_python_common/commit/ac97e69a512e143ffd0f3be0ec66383dc8ad97a7))
+
 ## [0.1.29](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.28...v0.1.29) (2025-08-29)
 
 

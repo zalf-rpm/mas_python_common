@@ -23,7 +23,14 @@ def read_header(path_to_ascii_grid_file, no_of_header_lines=6):
     """read metadata from esri ascii grid file"""
 
     def read_header_from(f):
-        possible_headers = ["ncols", "nrows", "xllcorner", "yllcorner", "cellsize", "nodata_value"]
+        possible_headers = [
+            "ncols",
+            "nrows",
+            "xllcorner",
+            "yllcorner",
+            "cellsize",
+            "nodata_value",
+        ]
         metadata = {}
         header_str = ""
         for i in range(0, no_of_header_lines):
@@ -133,6 +140,7 @@ def load_grid_and_metadata_from_ascii_grid(
     grid = np.loadtxt(path_to_ascii_grid, dtype=datatype, skiprows=no_of_header_rows)
     return (grid, metadata)
 
+
 def load_grid_cached(path_to_grid, val_type, print_path=False):
     if not hasattr(load_grid_cached, "cache"):
         load_grid_cached.cache = {}
@@ -161,10 +169,12 @@ def load_grid_cached(path_to_grid, val_type, print_path=False):
         return None
 
     cache_entry = {
-        "metadata": md, "grid": grid, "ll0r": ll0r,
+        "metadata": md,
+        "grid": grid,
+        "ll0r": ll0r,
         "col": lambda lon: col(lon),
         "row": lambda lat: row(lat),
-        "value": lambda lat, lon, ret_no_data: value(lat, lon, ret_no_data)
+        "value": lambda lat, lon, ret_no_data: value(lat, lon, ret_no_data),
     }
     load_grid_cached.cache[path_to_grid] = cache_entry
     return cache_entry
@@ -196,10 +206,13 @@ def create_climate_geoGrid_interpolator_from_json_file(
 
         return NearestNDInterpolator(np.array(points), np.array(values))
 
+
 def get_lat_0_lon_0_resolution_from_grid_metadata(metadata):
-    lat_0 = float(metadata["yllcorner"]) \
-            + (float(metadata["cellsize"]) * float(metadata["nrows"])) \
-            - (float(metadata["cellsize"]) / 2.0)
+    lat_0 = (
+        float(metadata["yllcorner"])
+        + (float(metadata["cellsize"]) * float(metadata["nrows"]))
+        - (float(metadata["cellsize"]) / 2.0)
+    )
     lon_0 = float(metadata["xllcorner"]) + (float(metadata["cellsize"]) / 2.0)
     resolution = float(metadata["cellsize"])
     return {"lat_0": lat_0, "lon_0": lon_0, "res": resolution}
