@@ -24,13 +24,7 @@ import uuid
 import capnp
 import pysodium
 import tomlkit as tk
-import zalfmas_capnp_schemas
-
-schema_dir = os.path.dirname(zalfmas_capnp_schemas.__file__)
-if schema_dir not in sys.path:
-    sys.path.append(schema_dir)
-import common_capnp
-import persistence_capnp
+from zalfmas_capnp_schemas import common_capnp, persistence_capnp, schemas_dir
 
 
 def as_sturdy_ref(anypointer):
@@ -47,6 +41,8 @@ def get_fbp_attr(ip, attr_name):
                 return kv.value
     return None
 
+def fbp_attr_as_dict(ip):
+    return {kv.key: kv.value for kv in ip.attributes}
 
 def copy_and_set_fbp_attrs(old_ip, new_ip, **kwargs):
     # no attributes to be copied?
@@ -58,7 +54,11 @@ def copy_and_set_fbp_attrs(old_ip, new_ip, **kwargs):
     if old_ip.attributes and len(kwargs) > 0:
         for i, kv in enumerate(old_ip.attributes):
             if kv.key in kwargs:
-                attr_name_to_new_index[kv.key] = i
+                # means remove attribute in new IP
+                if kv.value is None:
+                    attr_name_to_new_index[kv.key] = None
+                else:
+                    attr_name_to_new_index[kv.key] = i
                 break
 
     # init space for attributes in new IP
@@ -835,8 +835,8 @@ def load_capnp_module(path_and_type, def_type="Text", new_message=False, **kwarg
             capnp_module_path = os.path.dirname(capnp_module_path_and_name)
             if len(capnp_module_path) == 0:
                 capnp_module_path = "."
-            if capnp_module_path == "zalfmas_capnp_schemas":
-                capnp_module_path = schema_dir
+            if capnp_module_path.startswith("zalfmas_capnp_schemas"):
+                capnp_module_path = capnp_module_path.replace("zalfmas_capnp_schemas", schemas_dir)
             capnp_module_name = os.path.basename(capnp_module_path_and_name)
             type_name_and_params = type_name_and_params.split("&")
             if len(type_name_and_params) > 1:

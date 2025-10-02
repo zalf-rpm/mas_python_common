@@ -26,10 +26,10 @@ from zalfmas_common import common
 from zalfmas_common.common import ConnectionManager
 
 sys.path.append(os.path.dirname(zalfmas_capnp_schemas.__file__))
+import persistence_capnp
 import registry_capnp as reg_capnp
 import service_capnp
 import storage_capnp
-import persistence_capnp
 
 
 class AdministrableService:
@@ -405,7 +405,7 @@ def handle_default_service_args(
             config_dict.update(ti.load(f))
         return config_dict, args
     else:
-        parser.error("argument config_toml: expected path to config JSON file")
+        parser.error("argument config_toml: expected path to config TOML file")
 
     return {}, args
 
