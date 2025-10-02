@@ -590,10 +590,15 @@ class Restorer(persistence_capnp.Restorer.Server):
 
 
 class Identifiable(common_capnp.Identifiable.Server):
-    def __init__(self, id=None, name=None, description=None):
-        self._id = id if id else str(uuid.uuid4())
-        self._name = name if name else f"Unnamed_{self._id}"
-        self._description = description if description else ""
+    def __init__(
+        self,
+        id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+    ):
+        self._id: str = id if id else str(uuid.uuid4())
+        self._name: str = name if name else f"Unnamed_{self._id}"
+        self._description: str = description if description else ""
         self._init_info_func = None
 
     @property

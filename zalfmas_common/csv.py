@@ -16,7 +16,10 @@
 
 import csv
 
-def read_csv(path_to_csv, key="id", key_type=(int,), header_row_line=1, data_row_start=2):
+
+def read_csv(
+    path_to_csv, key="id", key_type=(int,), header_row_line=1, data_row_start=2
+):
     """read sim setup from csv file"""
     composite_key = type(key) is tuple
     keys = {i: v for i, v in enumerate(key)} if composite_key else {0: key}
@@ -54,7 +57,9 @@ def read_csv(path_to_csv, key="id", key_type=(int,), header_row_line=1, data_row
                     value = key_types[0](value)
                 data[header_col] = value
             if composite_key:
-                key_vals = tuple([key_types.get(i, key_types[0])(data[k]) for i, k in keys.items()])
+                key_vals = tuple(
+                    [key_types.get(i, key_types[0])(data[k]) for i, k in keys.items()]
+                )
             else:
                 key_vals = key_types[0](data[key])
             key_to_data[key_vals] = data
