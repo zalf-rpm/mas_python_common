@@ -220,6 +220,35 @@ async def register_vat_at_resolvers(
         except Exception as e:
             print("Error registering vat. Exception:", e)
 
+async def register_service_at_gateways(
+        con_man: ConnectionManager, name: str, service, gateways: list, admin: Admin
+):
+    for gw in gateways:
+        try:
+            sr = gw["sturdy_ref"]
+            print("Trying to register vat at gateway sturdy_ref:", sr)
+            gateway = await con_man.try_connect(
+                sr, cast_as=persistence_capnp.Gateway
+            )
+            if gateway:
+                res = await gateway.register(service)
+                print(res)
+                hb = res.heartbeat
+                hb_int = res.secsHeartbeatInterval
+                service_sr_at_gateway = res.sturdyRef
+
+                async def heartbeat():
+                    while True:
+                        await asyncio.sleep(hb_int)
+                        #print("beat", datetime.now())
+                        await hb.beat()
+
+                admin.tasks.append(asyncio.create_task(heartbeat()))
+                print(f"service: {name}, sr@'{gw['name']}': {common.sturdy_ref_str_from_sr(service_sr_at_gateway)}")
+            else:
+                print("Couldn't connect to gateway at sturdy_ref:", sr)
+        except Exception as e:
+            print("Error registering service at gateway. Exception:", e)
 
 async def init_and_run_service_from_config(
     config: dict,
@@ -238,6 +267,7 @@ async def init_and_run_service_from_config(
         serve_bootstrap=cv.get("serve_bootstrap", True),
         registries=cs.get("registries", None),
         resolvers=cv.get("resolvers", None),
+        gateways=cs.get("gateways", None),
         con_man=con_man,
         restorer=restorer,
         restorer_container_sr=cv.get("restorer_container_sr", None),
@@ -256,9 +286,11 @@ async def init_and_run_service(
     restorer_container_sr: str = None,
     registries: dict = None,
     resolvers: dict = None,
+    gateways: dict = None,
 ):
     registries = registries if registries else []
     resolvers = resolvers if resolvers else []
+    gateways = gateways if gateways else []
 
     if not restorer:
         restorer = common.Restorer()
@@ -295,6 +327,7 @@ async def init_and_run_service(
         restorer.port = server.sockets[0].getsockname()[1]
 
         for name, s in name_to_service.items():
+            await register_service_at_gateways(con_man, name, s, gateways, admin)
             res = await restorer.save_str(
                 cap=s, fixed_sr_token=name_to_service_srs.get(name, None)
             )
