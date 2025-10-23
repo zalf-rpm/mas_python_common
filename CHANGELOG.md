@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.31](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.30...v0.1.31) (2025-10-23)
+
+
+### Features
+
+* added connect to gateway option ([ede1a07](https://github.com/zalf-rpm/mas_python_common/commit/ede1a070dd8998e7512e18cbcefb19c9455d8066))
+
 ## [0.1.30](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.29...v0.1.30) (2025-09-11)
 
 
