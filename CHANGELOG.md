@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.32](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.31...v0.1.32) (2025-10-24)
+
+
+### Features
+
+* more flush=True ([c57b519](https://github.com/zalf-rpm/mas_python_common/commit/c57b5191ce564daf7215dece10b9b04a6f4c8ae7))
+
 ## [0.1.31](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.30...v0.1.31) (2025-10-23)
 
 
