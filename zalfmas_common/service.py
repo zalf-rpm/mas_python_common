@@ -226,7 +226,7 @@ async def register_service_at_gateways(
     for gw in gateways:
         try:
             sr = gw["sturdy_ref"]
-            print("Trying to register vat at gateway sturdy_ref:", sr)
+            print("Trying to register vat at gateway sturdy_ref:", sr, flush=True)
             gateway = await con_man.try_connect(
                 sr, cast_as=persistence_capnp.Gateway
             )
@@ -246,9 +246,9 @@ async def register_service_at_gateways(
                 admin.tasks.append(asyncio.create_task(heartbeat()))
                 print(f"service: {name}, sr@'{gw['name']}': {common.sturdy_ref_str_from_sr(service_sr_at_gateway)}", flush=True)
             else:
-                print("Couldn't connect to gateway at sturdy_ref:", sr)
+                print("Couldn't connect to gateway at sturdy_ref:", sr, flush=True)
         except Exception as e:
-            print("Error registering service at gateway. Exception:", e)
+            print("Error registering service at gateway. Exception:", e, flush=True)
 
 async def init_and_run_service_from_config(
     config: dict,
