@@ -244,7 +244,7 @@ async def register_service_at_gateways(
                         await hb.beat()
 
                 admin.tasks.append(asyncio.create_task(heartbeat()))
-                print(f"service: {name}, sr@'{gw['name']}': {common.sturdy_ref_str_from_sr(service_sr_at_gateway)}")
+                print(f"service: {name}, sr@'{gw['name']}': {common.sturdy_ref_str_from_sr(service_sr_at_gateway)}", flush=True)
             else:
                 print("Couldn't connect to gateway at sturdy_ref:", sr)
         except Exception as e:
@@ -332,8 +332,8 @@ async def init_and_run_service(
                 cap=s, fixed_sr_token=name_to_service_srs.get(name, None)
             )
             name_to_service_srs[name] = res["sturdy_ref"]
-            print("service:", name, "sr:", res["sturdy_ref"])
-        print("restorer_sr:", restorer.sturdy_ref_str())
+            print("service:", name, "sr:", res["sturdy_ref"], flush=True)
+        print("restorer_sr:", restorer.sturdy_ref_str(), flush=True)
 
         await register_services(con_man, name_to_service, admin, registries)
         await register_vat_at_resolvers(con_man, resolvers, admin)
