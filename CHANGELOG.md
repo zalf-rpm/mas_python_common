@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.34](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.33...v0.1.34) (2025-10-27)
+
+
+### Features
+
+* **deps:** bump psutils and other minor bumps ([2089f2d](https://github.com/zalf-rpm/mas_python_common/commit/2089f2d22bd749853bfde80f0bceb9215a45d470))
+
 ## [0.1.33](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.32...v0.1.33) (2025-10-27)
 
 
