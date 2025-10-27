@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.33](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.32...v0.1.33) (2025-10-27)
+
+
+### Features
+
+* **deps:** allow python 3.13 and bump minimum pycapnp to 2.1 accordingly ([8edd2f1](https://github.com/zalf-rpm/mas_python_common/commit/8edd2f189d5189c574d3128c58f21cbe55e33883))
+
 ## [0.1.32](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.31...v0.1.32) (2025-10-24)
 
 
