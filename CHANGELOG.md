@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.35](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.34...v0.1.35) (2025-11-19)
+
+
+### Features
+
+* switch imports from standart schemas to schemas with stubs ([8c1c993](https://github.com/zalf-rpm/mas_python_common/commit/8c1c9939c20540394fa53c63ed3a0e72ccd69487))
+* use zalfmas schemas with stubs and update connect function annotation ([4c527d7](https://github.com/zalf-rpm/mas_python_common/commit/4c527d7bf5c98d4f7c381eed161aa9a7f8d1645c))
+
 ## [0.1.34](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.33...v0.1.34) (2025-10-27)
 
 
