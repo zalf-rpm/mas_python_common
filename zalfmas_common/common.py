@@ -11,6 +11,7 @@
 # This file has been created at the Institute of
 # Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
+from __future__ import annotations
 
 import asyncio
 import base64
@@ -24,7 +25,13 @@ import uuid
 import capnp
 import pysodium
 import tomlkit as tk
-from zalfmas_capnp_schemas import common_capnp, persistence_capnp, schemas_dir
+from zalfmas_capnp_schemas_with_stubs import (
+    common_capnp,
+    fbp_capnp,
+    persistence_capnp,
+    schemas_dir,
+    storage_capnp,
+)
 
 
 def as_sturdy_ref(anypointer):
@@ -699,15 +706,25 @@ class Persistable(persistence_capnp.Persistent.Server):
 
 
 class ConnectionManager:
-    def __init__(self, restorer=None):
-        self._connections = {}
+    def __init__(self, restorer: Restorer | None = None):
+        self._connections: dict[str, capnp.lib.capnp._CapabilityClient] = {}
         self._restorer = restorer if restorer else Restorer()
 
     @property
     def restorer(self):
         return self._restorer
 
-    async def connect(self, sturdy_ref, cast_as=None):
+    async def connect(
+        self,
+        sturdy_ref: persistence_capnp.SturdyRefBuilder
+        | persistence_capnp.SturdyRefReader
+        | str,
+        cast_as: capnp.lib.capnp._InterfaceModule | None = None,
+    ) -> (
+        capnp.lib.capnp._CapabilityClient
+        | capnp.lib.capnp._DynamicCapabilityClient
+        | None
+    ):
         if not sturdy_ref:
             return None
 
@@ -793,7 +810,9 @@ class ConnectionManager:
                     return (
                         dyn_obj_reader.as_interface(cast_as)
                         if cast_as
-                        else dyn_obj_reader
+                        else dyn_obj_reader.as_interface(
+                            capnp.lib.capnp._InterfaceSchema()
+                        )
                     )
             else:
                 return bootstrap_cap.cast_as(cast_as) if cast_as else bootstrap_cap
@@ -806,11 +825,17 @@ class ConnectionManager:
 
     async def try_connect(
         self,
-        sturdy_ref,
-        cast_as=None,
+        sturdy_ref: persistence_capnp.SturdyRefBuilder
+        | persistence_capnp.SturdyRefReader
+        | str,
+        cast_as: capnp.lib.capnp._InterfaceModule | None = None,
         retry_count=10,
         retry_secs=5,
         print_retry_msgs=True,
+    ) -> (
+        capnp.lib.capnp._DynamicCapabilityClient
+        | capnp.lib.capnp._CapabilityClient
+        | None
     ):
         while True:
             try:
