@@ -9,6 +9,7 @@
 # Currently maintained by the authors.
 #
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
+from __future__ import annotations
 
 import argparse
 import asyncio
@@ -19,12 +20,13 @@ from datetime import datetime
 import capnp
 import tomli as ti
 import tomlkit as tk
-from zalfmas_capnp_schemas import (
+from zalfmas_capnp_schemas_with_stubs import (
+    common_capnp,
     persistence_capnp,
     service_capnp,
     storage_capnp,
 )
-from zalfmas_capnp_schemas import (
+from zalfmas_capnp_schemas_with_stubs import (
     registry_capnp as reg_capnp,
 )
 

@@ -21,7 +21,7 @@ from datetime import date
 
 import pandas as pd
 import psutil
-from zalfmas_capnp_schemas import climate_capnp, geo_capnp
+from zalfmas_capnp_schemas_with_stubs import climate_capnp, geo_capnp
 
 from zalfmas_common import common
 from zalfmas_common.climate import common_climate_data_capnp_impl as ccdi
