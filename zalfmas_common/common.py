@@ -8,8 +8,6 @@
 # Maintainers:
 # Currently maintained by the authors.
 #
-# This file has been created at the Institute of
-# Landscape Systems Analysis at the ZALF.
 # Copyright (C: Leibniz Centre for Agricultural Landscape Research (ZALF)
 from __future__ import annotations
 
@@ -18,6 +16,7 @@ import base64
 import json
 import os
 import socket
+import ssl
 import sys
 import urllib.parse as urlp
 import uuid
@@ -27,10 +26,8 @@ import pysodium
 import tomlkit as tk
 from zalfmas_capnp_schemas_with_stubs import (
     common_capnp,
-    fbp_capnp,
     persistence_capnp,
     schemas_dir,
-    storage_capnp,
 )
 
 
@@ -706,13 +703,18 @@ class Persistable(persistence_capnp.Persistent.Server):
 
 
 class ConnectionManager:
-    def __init__(self, restorer: Restorer | None = None):
+    def __init__(self, restorer: Restorer | None = None, cache_connections: bool = True):
         self._connections: dict[str, capnp.lib.capnp._CapabilityClient] = {}
         self._restorer = restorer if restorer else Restorer()
+        self._cache_connections = cache_connections
 
     @property
     def restorer(self):
         return self._restorer
+
+    @property
+    def cache_connections(self):
+        return self._cache_connections
 
     async def connect(
         self,
@@ -720,6 +722,9 @@ class ConnectionManager:
         | persistence_capnp.SturdyRefReader
         | str,
         cast_as: capnp.lib.capnp._InterfaceModule | None = None,
+        default_port: int | None = None,
+        default_ssl_port: int = 443,
+        cadata: str | bytes | None = None,
     ) -> (
         capnp.lib.capnp._CapabilityClient
         | capnp.lib.capnp._DynamicCapabilityClient
@@ -775,14 +780,26 @@ class ConnectionManager:
                 sr_token = sturdy_ref.localRef.text
 
             host_port = str(host) + (":" + str(port) if port else "")
-            if host_port in self._connections:
+            if self.cache_connections and host_port in self._connections:
                 bootstrap_cap = self._connections[host_port]
             else:
-                connection = await capnp.AsyncIoStream.create_connection(
-                    host=host, port=port
-                )
+                # first try to connect via ssl
+                ctx = ssl.create_default_context(cadata=cadata)
+                try:
+                    connection = await capnp.AsyncIoStream.create_connection(
+                        host=host,
+                        port=port if port else default_ssl_port,
+                        ssl=ctx,
+                        ssl_handshake_timeout=1,
+                    )
+                except Exception:
+                    connection = await capnp.AsyncIoStream.create_connection(
+                        host=host,
+                        port=port if port else default_port,
+                    )
                 bootstrap_cap = capnp.TwoPartyClient(connection).bootstrap()
-                self._connections[host_port] = bootstrap_cap
+                if self._cache_connections:
+                    self._connections[host_port] = bootstrap_cap
 
             if resolve_b64_vat_id_or_alias:
                 resolver = bootstrap_cap.cast_as(persistence_capnp.HostPortResolver)
@@ -839,8 +856,7 @@ class ConnectionManager:
     ):
         while True:
             try:
-                cap = await self.connect(sturdy_ref, cast_as=cast_as)
-                if cap:
+                if cap := await self.connect(sturdy_ref, cast_as=cast_as):
                     return cap
             except Exception as e:
                 print(e)
