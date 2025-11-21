@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.36](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.35...v0.1.36) (2025-11-21)
+
+
+### Features
+
+* support ssl connections ([9b004d2](https://github.com/zalf-rpm/mas_python_common/commit/9b004d2c4f605fa1af0a9e0fa45fbc75e7f01d67))
+
 ## [0.1.35](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.34...v0.1.35) (2025-11-19)
 
 
