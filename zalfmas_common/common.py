@@ -182,10 +182,11 @@ def create_service_toml_config(
 
 
 def sturdy_ref_str(vat_sign_pk, host, port, sr_token=None):
-    return "capnp://{vat_id}@{host}:{port}{sr_token}".format(
+    return "capnp://{vat_id}@{host}{colon}{port}{sr_token}".format(
         vat_id=base64.urlsafe_b64encode(vat_sign_pk).decode("utf-8"),
         host=host,
-        port=port,
+        colon=":" if port > 0 else "",
+        port=port if port > 0 else "",
         sr_token="/" + sr_token if sr_token else "",
     )
 
