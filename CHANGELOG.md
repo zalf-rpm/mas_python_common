@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.37](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.36...v0.1.37) (2025-11-25)
+
+
+### Bug Fixes
+
+* ignore port &lt;= 0 during sturdy ref creation ([dcdef2e](https://github.com/zalf-rpm/mas_python_common/commit/dcdef2ea80f66e65306b54ef1a196829857354c7))
+
 ## [0.1.36](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.35...v0.1.36) (2025-11-21)
 
 
