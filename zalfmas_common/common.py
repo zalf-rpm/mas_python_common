@@ -445,18 +445,16 @@ class Restorer(persistence_capnp.Restorer.Server):
         #    owner_pk = self._owner_guid_to_box_pk[owner_guid]
         #    sr_token = pysodium.crypto_sign(sr_token, owner_pk)
         return {
-            "transient": {
-                "vat": {
-                    "id": {
-                        "publicKey0": self._vat_id[0],
-                        "publicKey1": self._vat_id[1],
-                        "publicKey2": self._vat_id[2],
-                        "publicKey3": self._vat_id[3],
-                    },
-                    "address": {"host": self.host, "port": self.port},
+            "vat": {
+                "id": {
+                    "publicKey0": self._vat_id[0],
+                    "publicKey1": self._vat_id[1],
+                    "publicKey2": self._vat_id[2],
+                    "publicKey3": self._vat_id[3],
                 },
-                "localRef": {"text": sr_token if sr_token else ""},
-            }
+                "address": {"host": self.host, "port": self.port},
+            },
+            "localRef": {"text": sr_token if sr_token else ""},
         }
 
     async def save_cap(
@@ -599,6 +597,58 @@ class Restorer(persistence_capnp.Restorer.Server):
             context.params.localRef, owner_guid=owner_guid.guid if owner_guid else None
         )
 
+class GatewayRegistrable(persistence_capnp.GatewayRegistrable.Server):
+    def __init__(
+            self,
+            con_man: ConnectionManager,
+            print_debug: bool = False,
+    ):
+        self.con_man = con_man
+        self.hb_tasks = []
+        self.print_debug = print_debug
+        self.self_at_gw_srs = {}
+
+    # sturdyRefAtGateway @0 (gatewaySR :SturdyRef, gatewayId: Text) -> (selfAtGatewaySR :SturdyRef);
+    async def sturdyRefAtGateway(self, gatewaySR: str, gatewayId: str, _context):
+        try:
+            if self.print_debug:
+                print("Trying to register vat at gateway sturdy_ref:", gatewaySR, flush=True)
+            gateway = (await self.con_man.try_connect(gatewaySR)).cast_as(persistence_capnp.Gateway)
+            gw_id = (
+                sturdy_ref_str(
+                    b"",
+                    gatewaySR.vat.address.host,
+                    gatewaySR.vat.address.port,
+                )
+                if len(gatewayId) == 0
+                else gatewayId
+            )
+            if gateway:
+                res = await gateway.register(self)
+                hb = res.heartbeat
+                hb_int = res.secsHeartbeatInterval
+                process_sr_at_gateway = res.sturdyRef
+
+                self.self_at_gw_srs[gw_id] = process_sr_at_gateway
+
+                async def heartbeat():
+                    while True:
+                        await asyncio.sleep(hb_int)
+                        #print("beat", datetime.now())
+                        await hb.beat()
+
+                self.hb_tasks.append(asyncio.create_task(heartbeat()))
+                if self.print_debug:
+                    print(f"sr@'{gw_id}': {sturdy_ref_str_from_sr(process_sr_at_gateway)}", flush=True)
+
+                return process_sr_at_gateway
+            else:
+                if self.print_debug:
+                    print("Couldn't connect to gateway at sturdy_ref:", gatewaySR, flush=True)
+        except Exception as e:
+            if self.print_debug:
+                print("Error registering service at gateway. Exception:", e, flush=True)
+
 
 class Identifiable(common_capnp.Identifiable.Server):
     def __init__(
@@ -701,6 +751,58 @@ class Persistable(persistence_capnp.Persistent.Server):
         if self.restorer:
             res = await self.restorer.save(self)
             return save_res(res)
+
+
+def create_sturdy_ref_from_sr_str(sturdy_ref: str) -> persistence_capnp.SturdyRef:
+    # we assume that a sturdy ref url looks always like
+    # (for normal sturdy ref)
+    # capnp://vat-id_base64-curve25519-public-key@host:port/sturdy-ref-token
+    # or (for resolver address)
+    # capnp://vat-id_base64-curve25519-public-key@host:port/to-be-resolved-vat-id_base64_or_alias/sturdy-ref-token
+    # and
+    # ?owner_guid = optional_owner_global_unique_id
+    # & b_iid = optional_bootstrap_interface_id
+    # & sr_iid = optional_the_sturdy_refs_remote_interface_id
+    url = urlp.urlparse(sturdy_ref)
+    host = None
+    port = None
+    resolve_b64_vat_id_or_alias = None
+    owner_guid = None
+    bootstrap_interface_id = None
+    sturdy_ref_interface_id = None
+
+    sr = persistence_capnp.SturdyRef.new_message()
+    if url.scheme == "capnp":
+        vat_id_base64 = url.username
+        host = url.hostname
+        port = url.port
+        sr.vat = {
+            #"id": {
+            #    "publicKey0": self._vat_id[0],
+            #    "publicKey1": self._vat_id[1],
+            #    "publicKey2": self._vat_id[2],
+            #    "publicKey3": self._vat_id[3],
+            #},
+            "address": {"host": url.hostname, "port": url.port if url.port else 0},
+        }
+        if len(url.query) > 0:
+            q = urlp.parse_qs(url.query)
+            owner_guid = q.get("owner_guid", None)
+            bootstrap_interface_id = q.get("b_iid", None)
+            sturdy_ref_interface_id = q.get("sr_iid", None)
+        path_segs = url.path[1:].split("/")
+        if len(path_segs) == 1:
+            if len(path_segs[0]) > 0:
+                sr.localRef = path_segs[0]
+        elif len(path_segs) == 2:
+            resolve_b64_vat_id_or_alias = path_segs[0]
+            if len(path_segs[1]) > 0:
+                sr.localRef = path_segs[1]
+        # sr_token is base64 encoded if there's an owner (because of signing)
+        if sr.localRef and owner_guid:
+            sr.localRef = base64.urlsafe_b64decode(sr.localRef + "==")
+            
+    return sr
 
 
 class ConnectionManager:
