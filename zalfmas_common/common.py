@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import logging
 import os
 import socket
 import ssl
@@ -30,6 +31,8 @@ from zalfmas_capnp_schemas_with_stubs import (
     schemas_dir,
 )
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(format="%(asctime)s @ %(name)s - %(levelname)-8s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
 def as_sturdy_ref(anypointer):
     st = anypointer.as_struct(common_capnp.StructuredText)
@@ -307,7 +310,7 @@ class Restorer(persistence_capnp.Restorer.Server):
             if not val.isUnset:
                 self.port = val.uint16Value
         except Exception as e:
-            print("Couldn't initialize storage from container.", e)
+            logger.error(f"Restorer.init_port_from_container: Couldn't initialize storage from container. Exception: {e}")
 
     async def init_vat_id_from_container(self):
         if not self.storage_container:
@@ -351,7 +354,7 @@ class Restorer(persistence_capnp.Restorer.Server):
             else:
                 self._sign_pk = pk
         except Exception as e:
-            print("Couldn't initialize vat id from container.", e)
+            logger.error("Restorer.init_vat_id_from_container: Couldn't initialize vat id from container.", e)
 
     def set_owner_guid(self, owner_guid, owner_box_pk):
         self._owner_guid_to_sign_pk[owner_guid] = owner_box_pk
@@ -601,18 +604,15 @@ class GatewayRegistrable(persistence_capnp.GatewayRegistrable.Server):
     def __init__(
             self,
             con_man: ConnectionManager,
-            print_debug: bool = False,
     ):
         self.con_man = con_man
         self.hb_tasks = []
-        self.print_debug = print_debug
         self.self_at_gw_srs = {}
 
     # sturdyRefAtGateway @0 (gatewaySR :SturdyRef, gatewayId: Text) -> (selfAtGatewaySR :SturdyRef);
-    async def sturdyRefAtGateway(self, gatewaySR: str, gatewayId: str, _context):
+    async def sturdyRefAtGateway(self, gatewaySR: persistence_capnp.SturdyRefReader, gatewayId: str, _context):
         try:
-            if self.print_debug:
-                print("Trying to register vat at gateway sturdy_ref:", gatewaySR, flush=True)
+            logger.info(f"Trying to register vat at gateway sturdy_ref: {gatewaySR}")
             gateway = (await self.con_man.try_connect(gatewaySR)).cast_as(persistence_capnp.Gateway)
             gw_id = (
                 sturdy_ref_str(
@@ -638,16 +638,13 @@ class GatewayRegistrable(persistence_capnp.GatewayRegistrable.Server):
                         await hb.beat()
 
                 self.hb_tasks.append(asyncio.create_task(heartbeat()))
-                if self.print_debug:
-                    print(f"sr@'{gw_id}': {sturdy_ref_str_from_sr(process_sr_at_gateway)}", flush=True)
+                logger.info(f"sr@'{gw_id}': {sturdy_ref_str_from_sr(process_sr_at_gateway)}")
 
                 return process_sr_at_gateway
             else:
-                if self.print_debug:
-                    print("Couldn't connect to gateway at sturdy_ref:", gatewaySR, flush=True)
+                logger.info(f"Couldn't connect to gateway at sturdy_ref: {gatewaySR}")
         except Exception as e:
-            if self.print_debug:
-                print("Error registering service at gateway. Exception:", e, flush=True)
+            logger.error(f"Error registering service at gateway. Exception: {e}")
 
 
 class Identifiable(common_capnp.Identifiable.Server):
@@ -909,12 +906,11 @@ class ConnectionManager:
                 # node = resolver.schema.node
                 # if node.displayName == f"{persistence_capnp.__name__}:HostPortResolver": # and node.id == 12289639464158895519
                 hp = await resolver.resolve(id=resolve_b64_vat_id_or_alias)
-                return await self.try_connect(
+                return (await self.try_connect(
                     persistence_capnp.SturdyRef.new_message(
                         vat={"address": {"host": hp.host, "port": hp.port}},
                         localRef={"text": sr_token},
-                    ),
-                    cast_as=cast_as,
+                    )).cast_as(cast_as)
                 )
             elif sr_token:
                 restorer = bootstrap_cap.cast_as(persistence_capnp.Restorer)
@@ -938,7 +934,7 @@ class ConnectionManager:
                 return bootstrap_cap.cast_as(cast_as) if cast_as else bootstrap_cap
 
         except Exception as e:
-            print(f"{__file__} Exception: {e}")
+            logger.error(f"ConnectionManager.connect: Exception: {e}")
             return None
 
         return None
@@ -951,7 +947,6 @@ class ConnectionManager:
         cast_as: capnp.lib.capnp._InterfaceModule | None = None,
         retry_count=10,
         retry_secs=5,
-        print_retry_msgs=True,
     ) -> (
         capnp.lib.capnp._DynamicCapabilityClient
         | capnp.lib.capnp._CapabilityClient
@@ -962,14 +957,12 @@ class ConnectionManager:
                 if cap := await self.connect(sturdy_ref, cast_as=cast_as):
                     return cap
             except Exception as e:
-                print(e)
+                logger.error(f"ConnectionManager.try_connect: Exception: {e}")
             if retry_count == 0:
-                if print_retry_msgs:
-                    print(f"Couldn't connect to sturdy_ref at {sturdy_ref}!")
+                logger.info(f"Couldn't connect to sturdy_ref at {sturdy_ref}!")
                 return None
             retry_count -= 1
-            if print_retry_msgs:
-                print(f"Trying to connect to {sturdy_ref} again in {retry_secs} secs!")
+            logger.info(f"Trying to connect to {sturdy_ref} again in {retry_secs} secs!")
             await asyncio.sleep(retry_secs)
             retry_secs += 1
 
