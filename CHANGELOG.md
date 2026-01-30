@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.38](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.37...v0.1.38) (2026-01-30)
+
+
+### Bug Fixes
+
+* deps allow pandas 3.0 ([3eb1cf7](https://github.com/zalf-rpm/mas_python_common/commit/3eb1cf74e2c24d172753cbd9515ce77d5c633267))
+
 ## [0.1.37](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.36...v0.1.37) (2025-11-25)
 
 
