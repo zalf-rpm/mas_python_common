@@ -32,7 +32,11 @@ from zalfmas_capnp_schemas_with_stubs import (
 )
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(format="%(asctime)s @ %(name)s - %(levelname)-8s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(
+    format="%(asctime)s @ %(name)s - %(levelname)-8s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
 
 def as_sturdy_ref(anypointer):
     st = anypointer.as_struct(common_capnp.StructuredText)
@@ -48,8 +52,10 @@ def get_fbp_attr(ip, attr_name):
                 return kv.value
     return None
 
+
 def fbp_attr_as_dict(ip):
     return {kv.key: kv.value for kv in ip.attributes}
+
 
 def copy_and_set_fbp_attrs(old_ip, new_ip, **kwargs):
     # no attributes to be copied?
@@ -310,7 +316,9 @@ class Restorer(persistence_capnp.Restorer.Server):
             if not val.isUnset:
                 self.port = val.uint16Value
         except Exception as e:
-            logger.error(f"Restorer.init_port_from_container: Couldn't initialize storage from container. Exception: {e}")
+            logger.error(
+                f"Restorer.init_port_from_container: Couldn't initialize storage from container. Exception: {e}"
+            )
 
     async def init_vat_id_from_container(self):
         if not self.storage_container:
@@ -354,7 +362,9 @@ class Restorer(persistence_capnp.Restorer.Server):
             else:
                 self._sign_pk = pk
         except Exception as e:
-            logger.error("Restorer.init_vat_id_from_container: Couldn't initialize vat id from container.", e)
+            logger.error(
+                f"Restorer.init_vat_id_from_container: Couldn't initialize vat id from container. Exception: {e}"
+            )
 
     def set_owner_guid(self, owner_guid, owner_box_pk):
         self._owner_guid_to_sign_pk[owner_guid] = owner_box_pk
@@ -600,20 +610,25 @@ class Restorer(persistence_capnp.Restorer.Server):
             context.params.localRef, owner_guid=owner_guid.guid if owner_guid else None
         )
 
+
 class GatewayRegistrable(persistence_capnp.GatewayRegistrable.Server):
     def __init__(
-            self,
-            con_man: ConnectionManager,
+        self,
+        con_man: ConnectionManager,
     ):
         self.con_man = con_man
         self.hb_tasks = []
         self.self_at_gw_srs = {}
 
     # sturdyRefAtGateway @0 (gatewaySR :SturdyRef, gatewayId: Text) -> (selfAtGatewaySR :SturdyRef);
-    async def sturdyRefAtGateway(self, gatewaySR: persistence_capnp.SturdyRefReader, gatewayId: str, _context):
+    async def sturdyRefAtGateway(
+        self, gatewaySR: persistence_capnp.SturdyRefReader, gatewayId: str, _context
+    ):
         try:
             logger.info(f"Trying to register vat at gateway sturdy_ref: {gatewaySR}")
-            gateway = (await self.con_man.try_connect(gatewaySR)).cast_as(persistence_capnp.Gateway)
+            gateway = (await self.con_man.try_connect(gatewaySR)).cast_as(
+                persistence_capnp.Gateway
+            )
             gw_id = (
                 sturdy_ref_str(
                     b"",
@@ -634,11 +649,13 @@ class GatewayRegistrable(persistence_capnp.GatewayRegistrable.Server):
                 async def heartbeat():
                     while True:
                         await asyncio.sleep(hb_int)
-                        #print("beat", datetime.now())
+                        # print("beat", datetime.now())
                         await hb.beat()
 
                 self.hb_tasks.append(asyncio.create_task(heartbeat()))
-                logger.info(f"sr@'{gw_id}': {sturdy_ref_str_from_sr(process_sr_at_gateway)}")
+                logger.info(
+                    f"sr@'{gw_id}': {sturdy_ref_str_from_sr(process_sr_at_gateway)}"
+                )
 
                 return process_sr_at_gateway
             else:
@@ -774,12 +791,12 @@ def create_sturdy_ref_from_sr_str(sturdy_ref: str) -> persistence_capnp.SturdyRe
         host = url.hostname
         port = url.port
         sr.vat = {
-            #"id": {
+            # "id": {
             #    "publicKey0": self._vat_id[0],
             #    "publicKey1": self._vat_id[1],
             #    "publicKey2": self._vat_id[2],
             #    "publicKey3": self._vat_id[3],
-            #},
+            # },
             "address": {"host": url.hostname, "port": url.port if url.port else 0},
         }
         if len(url.query) > 0:
@@ -798,12 +815,14 @@ def create_sturdy_ref_from_sr_str(sturdy_ref: str) -> persistence_capnp.SturdyRe
         # sr_token is base64 encoded if there's an owner (because of signing)
         if sr.localRef and owner_guid:
             sr.localRef = base64.urlsafe_b64decode(sr.localRef + "==")
-            
+
     return sr
 
 
 class ConnectionManager:
-    def __init__(self, restorer: Restorer | None = None, cache_connections: bool = True):
+    def __init__(
+        self, restorer: Restorer | None = None, cache_connections: bool = True
+    ):
         self._connections: dict[str, capnp.lib.capnp._CapabilityClient] = {}
         self._restorer = restorer if restorer else Restorer()
         self._cache_connections = cache_connections
@@ -906,12 +925,12 @@ class ConnectionManager:
                 # node = resolver.schema.node
                 # if node.displayName == f"{persistence_capnp.__name__}:HostPortResolver": # and node.id == 12289639464158895519
                 hp = await resolver.resolve(id=resolve_b64_vat_id_or_alias)
-                return (await self.try_connect(
+                return await self.try_connect(
                     persistence_capnp.SturdyRef.new_message(
                         vat={"address": {"host": hp.host, "port": hp.port}},
                         localRef={"text": sr_token},
-                    )).cast_as(cast_as)
-                )
+                    )
+                ).cast_as(cast_as)
             elif sr_token:
                 restorer = bootstrap_cap.cast_as(persistence_capnp.Restorer)
                 dyn_obj_reader = (
@@ -962,13 +981,17 @@ class ConnectionManager:
                 logger.info(f"Couldn't connect to sturdy_ref at {sturdy_ref}!")
                 return None
             retry_count -= 1
-            logger.info(f"Trying to connect to {sturdy_ref} again in {retry_secs} secs!")
+            logger.info(
+                f"Trying to connect to {sturdy_ref} again in {retry_secs} secs!"
+            )
             await asyncio.sleep(retry_secs)
             retry_secs += 1
 
 
 # very questionable if this is a good idea ... too many problems pop up when loading schemas dynamically
-def load_capnp_module(path_and_type, def_type="Text", new_message=False, **kwargs):
+def load_capnp_module(
+    path_and_type, def_type="Text", imports=[], new_message=False, **kwargs
+):
     capnp_type = def_type
     if path_and_type:
         p_and_t = path_and_type.split(":")
@@ -979,7 +1002,9 @@ def load_capnp_module(path_and_type, def_type="Text", new_message=False, **kwarg
             if len(capnp_module_path) == 0:
                 capnp_module_path = "."
             if capnp_module_path.startswith("zalfmas_capnp_schemas"):
-                capnp_module_path = capnp_module_path.replace("zalfmas_capnp_schemas", schemas_dir)
+                capnp_module_path = capnp_module_path.replace(
+                    "zalfmas_capnp_schemas", schemas_dir
+                )
             capnp_module_name = os.path.basename(capnp_module_path_and_name)
             type_name_and_params = type_name_and_params.split("&")
             if len(type_name_and_params) > 1:
@@ -987,8 +1012,8 @@ def load_capnp_module(path_and_type, def_type="Text", new_message=False, **kwarg
             else:
                 type_name = type_name_and_params[0]
             capnp_module = capnp.load(
-                os.path.join(capnp_module_path, capnp_module_name)
-            )  # , imports=sys.path)
+                os.path.join(capnp_module_path, capnp_module_name), imports=imports
+            )
             capnp_type = capnp_module.__dict__.get(type_name, def_type)
             if new_message:
                 if params:
