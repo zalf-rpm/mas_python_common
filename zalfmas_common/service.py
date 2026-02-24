@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
 import os
 import threading
 from datetime import datetime
@@ -32,6 +33,12 @@ from zalfmas_capnp_schemas_with_stubs import (
 
 from zalfmas_common import common
 from zalfmas_common.common import ConnectionManager
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s @ %(name)s - %(levelname)-8s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 class AdministrableService:
@@ -101,12 +108,12 @@ class Admin(service_capnp.Admin.Server, common.Identifiable):
             exit(0)
 
         if self._stop_action:
-            print("Admin::stop message with stop_action")
+            logger.info("Admin::stop message with stop_action")
             return self._stop_action().then(
                 lambda proms: [proms, threading.Timer(5, stop).start()][0]
             )
         else:
-            print("Admin::stop message without")
+            logger.info("Admin::stop message without")
             threading.Timer(5, stop).start()
 
     async def identities(
@@ -141,11 +148,8 @@ async def register_services(
                 reg_sr = reg["sturdy_ref"]
                 reg_name = reg.get("name", "")
                 reg_cat_id = reg.get("category_id", "")
-                print(
-                    "Trying to register service with name:",
-                    reg_name,
-                    "@ category:",
-                    reg_cat_id,
+                logger.info(
+                    f"Trying to register service with name: {reg_name} @ category: {reg_cat_id}"
                 )
                 registrar = await con_man.try_connect(
                     reg_sr, cast_as=reg_capnp.Registrar
@@ -157,25 +161,16 @@ async def register_services(
                     unreg_action = r.unreg
                     rereg_sr = r.reregSR
                     admin.store_unreg_data(name, unreg_action, rereg_sr)
-                    print(
-                        "Registered service",
-                        name,
-                        "in category '",
-                        reg_cat_id,
-                        "' as '",
-                        reg_name,
-                        "'.",
+                    logger.info(
+                        f"Registered service {name} in category '{reg_cat_id} ' as '{reg_name}'."
                     )
                 else:
-                    print("Couldn't connect to registrar at sturdy_ref:", reg_sr)
+                    logger.error(
+                        f"Couldn't connect to registrar at sturdy_ref: {reg_sr}"
+                    )
             except Exception as e:
-                print(
-                    "Error registering service name:",
-                    name,
-                    "using data:",
-                    reg,
-                    ". Exception:",
-                    e,
+                logger.error(
+                    f"Error registering service name: {name} using data: {reg}. Exception: {e}"
                 )
 
 
@@ -185,7 +180,7 @@ async def register_vat_at_resolvers(
     for res in resolvers:
         try:
             sr = res["sturdy_ref"]
-            print("Trying to register vat at resolver sturdy_ref:", sr)
+            logger.info(f"Trying to register vat at resolver sturdy_ref: {sr}")
             registrar = await con_man.try_connect(
                 sr, cast_as=persistence_capnp.HostPortResolver.Registrar
             )
@@ -198,7 +193,6 @@ async def register_vat_at_resolvers(
                 if "alias" in res:
                     req.alias = res["alias"]
                 r = await req.send()
-                print(r)
                 # r = await registrar.register(cap=name_to_service[name], regName=service_name,
                 #                             categoryId=alias)
                 hb = r.heartbeat
@@ -207,34 +201,33 @@ async def register_vat_at_resolvers(
                 async def heartbeat():
                     while True:
                         await asyncio.sleep(hb_int)
-                        print("beat", datetime.now())
+                        # print("beat", datetime.now())
                         await hb.beat()
 
                 admin.tasks.append(asyncio.create_task(heartbeat()))
                 # admin.store_unreg_data(name, unreg_action, rereg_sr)
-                print(
-                    "Registered at resolver vat with vat_id:",
-                    con_man.restorer.base64_vat_id,
-                    f"and alias {res['alias']}." if "alias" in res else ".",
+                logger.info(
+                    f"Registered at resolver vat with vat_id: {con_man.restorer.base64_vat_id}"
+                    + f" and alias {res['alias']}"
+                    if "alias" in res
+                    else "."
                 )
             else:
-                print("Couldn't connect to registrar at sturdy_ref:", sr)
+                logger.error(f"Couldn't connect to registrar at sturdy_ref: {sr}")
         except Exception as e:
-            print("Error registering vat. Exception:", e)
+            logger.error(f"Error registering vat. Exception: {e}")
+
 
 async def register_service_at_gateways(
-        con_man: ConnectionManager, name: str, service, gateways: list, admin: Admin
+    con_man: ConnectionManager, name: str, service, gateways: list, admin: Admin
 ):
     for gw in gateways:
         try:
             sr = gw["sturdy_ref"]
-            print("Trying to register vat at gateway sturdy_ref:", sr, flush=True)
-            gateway = await con_man.try_connect(
-                sr, cast_as=persistence_capnp.Gateway
-            )
+            logger.info(f"Trying to register vat at gateway sturdy_ref: {sr}")
+            gateway = await con_man.try_connect(sr, cast_as=persistence_capnp.Gateway)
             if gateway:
                 res = await gateway.register(service)
-                print(res)
                 hb = res.heartbeat
                 hb_int = res.secsHeartbeatInterval
                 service_sr_at_gateway = res.sturdyRef
@@ -242,15 +235,18 @@ async def register_service_at_gateways(
                 async def heartbeat():
                     while True:
                         await asyncio.sleep(hb_int)
-                        #print("beat", datetime.now())
+                        # print("beat", datetime.now())
                         await hb.beat()
 
                 admin.tasks.append(asyncio.create_task(heartbeat()))
-                print(f"service: {name}, sr@'{gw['name']}': {common.sturdy_ref_str_from_sr(service_sr_at_gateway)}", flush=True)
+                logger.info(
+                    f"service: {name}, sr@'{gw['name']}': {common.sturdy_ref_str_from_sr(service_sr_at_gateway)}"
+                )
             else:
-                print("Couldn't connect to gateway at sturdy_ref:", sr, flush=True)
+                logger.error(f"Couldn't connect to gateway at sturdy_ref: {sr}")
         except Exception as e:
-            print("Error registering service at gateway. Exception:", e, flush=True)
+            logger.error(f"Error registering service at gateway. Exception: {e}")
+
 
 async def init_and_run_service_from_config(
     config: dict,
@@ -327,15 +323,16 @@ async def init_and_run_service(
     if serve_bootstrap:
         server = await capnp.AsyncIoStream.create_server(new_connection, host, port)
         restorer.port = server.sockets[0].getsockname()[1]
-
+        logger.setLevel("INFO")
         for name, s in name_to_service.items():
             await register_service_at_gateways(con_man, name, s, gateways, admin)
             res = await restorer.save_str(
                 cap=s, fixed_sr_token=name_to_service_srs.get(name, None)
             )
             name_to_service_srs[name] = res["sturdy_ref"]
-            print("service:", name, "sr:", res["sturdy_ref"], flush=True)
-        print("restorer_sr:", restorer.sturdy_ref_str(), flush=True)
+            logger.info(f"service: {name} sr: {res['sturdy_ref']}")
+        logger.info(f"restorer_sr: {restorer.sturdy_ref_str()}")
+        logger.setLevel("WARNING")
 
         await register_services(con_man, name_to_service, admin, registries)
         await register_vat_at_resolvers(con_man, resolvers, admin)
@@ -373,7 +370,7 @@ def handle_default_service_args_with_dict(parser, config: dict = None):
         doc.add("options", opts)
 
     if args.output_toml_config:
-        print(tk.dumps(doc))
+        logger.info(tk.dumps(doc))
         exit(0)
     elif args.write_toml_config:
         with open(args.write_toml_config, "w") as _:
@@ -422,14 +419,14 @@ def handle_default_service_args(
             with open(path_to_template_config) as f:
                 toml_doc = tk.load(f)
             if args.output_toml_config:
-                print(tk.dumps(toml_doc))
+                logger.info(tk.dumps(toml_doc))
                 exit(0)
             elif args.write_toml_config:
                 with open(args.write_toml_config, "w") as _:
                     _.write(tk.dumps(toml_doc))
                     exit(0)
         else:
-            print("No default configuration could be loaded.")
+            logger.error("No default configuration could be loaded.")
             exit(0)
     elif args.config_toml:
         config_dict = {}
