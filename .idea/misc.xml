@@ -4,7 +4,7 @@
     <option name="enabledOnReformat" value="true" />
     <option name="sdkName" value="Poetry (mas_python_common)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (mas_python_common)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="mas_python_common" project-jdk-type="Python SDK" />
   <component name="PythonCompatibilityInspectionAdvertiser">
     <option name="version" value="3" />
   </component>

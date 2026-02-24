@@ -4,7 +4,7 @@ version = "0.1.38"
 description = "Common code for ZALF MAS projects"
 readme = { file = "README.md", content-type = "text/markdown" }
 authors = [{ name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de" }]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "pycapnp>=2.1.0,<3.0.0",
     "pysodium>=0.7.17,<0.8.0",
@@ -20,6 +20,18 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+libsodium = ">=1.0.21,<2"
+pixi-pycharm = ">=0.0.10,<0.0.11"
+
+# Referencing local packages in editable mode for pixi
+# [tool.pixi.pypi-dependencies]
+# zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", editable = true }
 
 # Example for referencing local packages in editable mode just uncomment these lines while keeping the above it will overwrite
 # If the line for the package in the dependencies section is commented out it will have no effect
