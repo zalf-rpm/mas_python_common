@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.39](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.38...v0.1.39) (2026-02-24)
+
+
+### Features
+
+* added pixi ([0d38cab](https://github.com/zalf-rpm/mas_python_common/commit/0d38cab8b05a781c55e243f6a1c06a8c6ed550ad))
+
 ## [0.1.38](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.37...v0.1.38) (2026-01-30)
 
 
