@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.40](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.39...v0.1.40) (2026-03-23)
+
+
+### Features
+
+* allowed for single digit utm zones ([783649d](https://github.com/zalf-rpm/mas_python_common/commit/783649d61982b09546e8fe92f77d97a7d983f4f7))
+
 ## [0.1.39](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.38...v0.1.39) (2026-02-24)
 
 
