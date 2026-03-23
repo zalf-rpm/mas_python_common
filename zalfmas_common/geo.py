@@ -38,7 +38,7 @@ def name_to_struct_instance(name, x=None, y=None, default=None):
         if y:
             c.h = y
     elif len(name) == 6 and name[:3] == "utm":
-        zone = int(name[3:5])
+        zone = int(name[3:-1])
         lb = name[-1]
         c = geo_capnp.UTMCoord.new_message(zone=zone, latitudeBand=lb)
         if x:
