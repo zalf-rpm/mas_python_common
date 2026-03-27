@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.41](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.40...v0.1.41) (2026-03-27)
+
+
+### Features
+
+* load_capnp_module works again, but only with modules like mas.schema.geo.geo_capnp and in path ([046ffdd](https://github.com/zalf-rpm/mas_python_common/commit/046ffdd522e2a21f7b49fb3a1e5d956f00d7d462))
+
 ## [0.1.40](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.39...v0.1.40) (2026-03-23)
 
 
