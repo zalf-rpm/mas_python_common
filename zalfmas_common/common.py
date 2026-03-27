@@ -13,9 +13,9 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import importlib
 import json
 import logging
-import os
 import socket
 import ssl
 import sys
@@ -28,7 +28,6 @@ import tomlkit as tk
 from zalfmas_capnp_schemas_with_stubs import (
     common_capnp,
     persistence_capnp,
-    schemas_dir,
 )
 
 logger = logging.getLogger(__name__)
@@ -988,36 +987,48 @@ class ConnectionManager:
             retry_secs += 1
 
 
-# very questionable if this is a good idea ... too many problems pop up when loading schemas dynamically
 def load_capnp_module(
-    path_and_type, def_type="Text", imports=[], new_message=False, **kwargs
-):
+    path_and_type, def_type="Text", new_message=False, **kwargs):
+    """"
+    use like this
+    if __name__ == "__main__":
+        llc_t = load_capnp_module("mas.schema.geo.geo_capnp:LatLonCoord&lat=float(52.1)", new_message=True, lon=12.5)
+        print(llc_t)
+    """
     capnp_type = def_type
     if path_and_type:
         p_and_t = path_and_type.split(":")
         params = None
         if len(p_and_t) > 1:
             capnp_module_path_and_name, type_name_and_params = p_and_t
-            capnp_module_path = os.path.dirname(capnp_module_path_and_name)
-            if len(capnp_module_path) == 0:
-                capnp_module_path = "."
-            if capnp_module_path.startswith("zalfmas_capnp_schemas"):
-                capnp_module_path = capnp_module_path.replace(
-                    "zalfmas_capnp_schemas", schemas_dir
-                )
-            capnp_module_name = os.path.basename(capnp_module_path_and_name)
+            mod = importlib.import_module(capnp_module_path_and_name)
             type_name_and_params = type_name_and_params.split("&")
             if len(type_name_and_params) > 1:
                 type_name, params = type_name_and_params
+                params = params if type(params) is list else [params]
+                for p in params:
+                    kv = p.split("=")
+                    if len(kv) == 2:
+                        k, v = kv
+                        if v.endswith(")"):
+                            if (ob_pos := v.find("(")) != -1:
+                                val_type = v[:ob_pos]
+                                str_v = v[ob_pos+1:-1]
+                            if val_type.lower() in ["float", "double", "float32", "float64"]:
+                                v = float(str_v)
+                            elif val_type.lower() in ["int", "int32", "int64"]:
+                                v = int(str_v)
+                            elif val_type.lower() in ["str", "string", "text"]:
+                                v = str(str_v)
+                            elif val_type.lower() in ["bool", "boolean"]:
+                                v = bool(str_v)
+                            else:
+                                v = str_v
+                        kwargs[k] = v
             else:
                 type_name = type_name_and_params[0]
-            capnp_module = capnp.load(
-                os.path.join(capnp_module_path, capnp_module_name), imports=imports
-            )
-            capnp_type = capnp_module.__dict__.get(type_name, def_type)
+            capnp_type = mod.__dict__.get(type_name, def_type)
             if new_message:
-                if params:
-                    kwargs.update({k: v for k, v in params.split("=")})
                 nm = capnp_type.new_message(**kwargs)
                 return capnp_type, nm
         elif len(p_and_t) > 0:
@@ -1045,3 +1056,5 @@ class IdentifiableHolder(common_capnp.IdentifiableHolder.Server, Holder, Identif
     def __init__(self, value, id=None, name=None, description=None):
         Holder.__init__(self, value)
         Identifiable.__init__(self, id=id, name=name, description=description)
+
+
