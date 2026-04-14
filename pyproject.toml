@@ -6,15 +6,16 @@ readme = { file = "README.md", content-type = "text/markdown" }
 authors = [{ name = "Michael Berg-Mohnicke", email = "michael.berg@zalf.de" }]
 requires-python = ">=3.12,<3.14"
 dependencies = [
-    "pycapnp>=2.1.0,<3.0.0",
-    "pysodium>=0.7.17,<0.8.0",
-    "pyproj>=3.6.1,<4.0.0",
-    "scipy>=1.13.1,<2.0.0",
-    "pandas>=2.2.2,<4.0.0",
-    "psutil>=7.0.0,<8.0.0",
-    "tomlkit>=0.14.0,<0.15.0",
-    "zalfmas-capnp-schemas (>=0.1.49,<0.2.0)",
-    "tomli (>=2.3.0,<3.0.0)",
+  "pycapnp>=2.1.0,<3.0.0",
+  "pysodium>=0.7.17,<0.8.0",
+  "pyproj>=3.6.1,<4.0.0",
+  "scipy>=1.13.1,<2.0.0",
+  "pandas>=2.2.2,<4.0.0",
+  "psutil>=7.0.0,<8.0.0",
+  "tomlkit>=0.14.0,<0.15.0",
+  "zalfmas-capnp-schemas (>=0.1.49,<0.2.0)",
+  "tomli (>=2.3.0,<3.0.0)",
+  "pytest (>=9.0.3,<10.0.0)",
 ]
 
 [build-system]
@@ -35,8 +36,8 @@ pixi-pycharm = ">=0.0.10,<0.0.11"
 
 # Example for referencing local packages in editable mode just uncomment these lines while keeping the above it will overwrite
 # If the line for the package in the dependencies section is commented out it will have no effect
-# [tool.poetry.dependencies]
-# zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
+[tool.poetry.dependencies]
+zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.0"

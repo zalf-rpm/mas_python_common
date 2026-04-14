@@ -16,13 +16,11 @@ import asyncio
 import logging
 import os
 import threading
-from datetime import datetime
 
 import capnp
 import tomli as ti
 import tomlkit as tk
 from zalfmas_capnp_schemas_with_stubs import (
-    common_capnp,
     persistence_capnp,
     service_capnp,
     storage_capnp,
@@ -93,12 +91,14 @@ class Admin(service_capnp.Admin.Server, common.Identifiable):
                 .then(lambda: exit(0))
             )
 
-    async def heartbeat(self, **kwargs):  # heartbeat @0 ();
+    async def heartbeat(self, _context, **kwargs):  # heartbeat @0 ();
         if self._timeout_prom:
             self._timeout_prom.cancel()
         self.make_timeout()
 
-    async def setTimeout(self, seconds, **kwargs):  # setTimeout @1 (seconds :UInt64);
+    async def setTimeout(
+        self, seconds, _context, **kwargs
+    ):  # setTimeout @1 (seconds :UInt64);
         self._timeout = max(0, seconds)
         self.make_timeout()
 
