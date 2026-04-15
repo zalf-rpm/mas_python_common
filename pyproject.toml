@@ -13,7 +13,7 @@ dependencies = [
   "pandas>=2.2.2,<4.0.0",
   "psutil>=7.0.0,<8.0.0",
   "tomlkit>=0.14.0,<0.15.0",
-  "zalfmas-capnp-schemas (>=0.1.49,<0.2.0)",
+  "zalfmas-capnp-schemas @ git+https://github.com/zalf-rpm/mas_capnproto_schemas@new-typing-module",
   "tomli (>=2.3.0,<3.0.0)",
   "pytest (>=9.0.3,<10.0.0)",
 ]
@@ -36,8 +36,8 @@ pixi-pycharm = ">=0.0.10,<0.0.11"
 
 # Example for referencing local packages in editable mode just uncomment these lines while keeping the above it will overwrite
 # If the line for the package in the dependencies section is commented out it will have no effect
-[tool.poetry.dependencies]
-zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
+# [tool.poetry.dependencies]
+# zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.14.0"
