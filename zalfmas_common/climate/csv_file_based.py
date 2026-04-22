@@ -214,7 +214,7 @@ class TimeSeries(climate_capnp.TimeSeries.Server, common.Identifiable, common.Pe
             restorer=self._restorer,
         )
 
-    async def subheader(self, elements, **kwargs):  # (elements :List(Element)) -> (timeSeries :TimeSeries);
+    async def subheader(self, elements, _context, **kwargs):  # (elements :List(Element)) -> (timeSeries :TimeSeries);
         sub_headers = [str(e) for e in elements]
         sub_df = self.dataframe.loc[:, sub_headers]
 
@@ -421,10 +421,10 @@ class GetLocationsCallback(climate_capnp.Dataset.GetLocationsCallback.Server):
     async def nextLocations(
         self, maxCount, **kwargs
     ):  # nextLocations @1 (maxCount :Int64) -> (locations :List(Location));
-        l = []
+        locations = []
         for _ in range(maxCount):
             try:
-                l.append(next(self._locations_gen))
+                locations.append(next(self._locations_gen))
             except StopIteration:
                 break
-        return l
+        return locations

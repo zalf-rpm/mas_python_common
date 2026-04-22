@@ -242,17 +242,17 @@ async def init_and_run_service_from_config(
 
 async def init_and_run_service(
     name_to_service,
-    host: str = None,
-    port: int = None,
+    host: str | None = None,
+    port: int | None = None,
     serve_bootstrap=True,
-    restorer: common.Restorer = None,
-    con_man: common.ConnectionManager = None,
-    name_to_service_srs: dict = None,
+    restorer: common.Restorer | None = None,
+    con_man: common.ConnectionManager | None = None,
+    name_to_service_srs: dict | None = None,
     run_before_enter_eventloop=None,
-    restorer_container_sr: str = None,
-    registries: dict = None,
-    resolvers: dict = None,
-    gateways: dict = None,
+    restorer_container_sr: str | None = None,
+    registries: dict | None = None,
+    resolvers: dict | None = None,
+    gateways: dict | None = None,
 ):
     registries = registries if registries else []
     resolvers = resolvers if resolvers else []
