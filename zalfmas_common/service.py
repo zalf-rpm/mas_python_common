@@ -85,20 +85,14 @@ class Admin(service_capnp.Admin.Server, common.Identifiable):
 
     def make_timeout(self):
         if self._timeout > 0:
-            self._timeout_prom = (
-                capnp.getTimer()
-                .after_delay(self._timeout * 10**9)
-                .then(lambda: exit(0))
-            )
+            self._timeout_prom = capnp.getTimer().after_delay(self._timeout * 10**9).then(lambda: exit(0))
 
     async def heartbeat(self, _context, **kwargs):  # heartbeat @0 ();
         if self._timeout_prom:
             self._timeout_prom.cancel()
         self.make_timeout()
 
-    async def setTimeout(
-        self, seconds, _context, **kwargs
-    ):  # setTimeout @1 (seconds :UInt64);
+    async def setTimeout(self, seconds, _context, **kwargs):  # setTimeout @1 (seconds :UInt64);
         self._timeout = max(0, seconds)
         self.make_timeout()
 
@@ -109,16 +103,12 @@ class Admin(service_capnp.Admin.Server, common.Identifiable):
 
         if self._stop_action:
             logger.info("Admin::stop message with stop_action")
-            return self._stop_action().then(
-                lambda proms: [proms, threading.Timer(5, stop).start()][0]
-            )
+            return self._stop_action().then(lambda proms: [proms, threading.Timer(5, stop).start()][0])
         else:
             logger.info("Admin::stop message without")
             threading.Timer(5, stop).start()
 
-    async def identities(
-        self, **kwargs
-    ):  # identities @3 () -> (infos :List(Common.IdInformation));
+    async def identities(self, **kwargs):  # identities @3 () -> (infos :List(Common.IdInformation));
         infos = []
         for s in self._services:
             infos.append({"id": s.id, "name": s.name, "description": s.description})
@@ -148,42 +138,26 @@ async def register_services(
                 reg_sr = reg["sturdy_ref"]
                 reg_name = reg.get("name", "")
                 reg_cat_id = reg.get("category_id", "")
-                logger.info(
-                    f"Trying to register service with name: {reg_name} @ category: {reg_cat_id}"
-                )
-                registrar = await con_man.try_connect(
-                    reg_sr, cast_as=reg_capnp.Registrar
-                )
+                logger.info(f"Trying to register service with name: {reg_name} @ category: {reg_cat_id}")
+                registrar = await con_man.try_connect(reg_sr, cast_as=reg_capnp.Registrar)
                 if registrar:
-                    r = await registrar.register(
-                        cap=cap, regName=reg_name, categoryId=reg_cat_id
-                    )
+                    r = await registrar.register(cap=cap, regName=reg_name, categoryId=reg_cat_id)
                     unreg_action = r.unreg
                     rereg_sr = r.reregSR
                     admin.store_unreg_data(name, unreg_action, rereg_sr)
-                    logger.info(
-                        f"Registered service {name} in category '{reg_cat_id} ' as '{reg_name}'."
-                    )
+                    logger.info(f"Registered service {name} in category '{reg_cat_id} ' as '{reg_name}'.")
                 else:
-                    logger.error(
-                        f"Couldn't connect to registrar at sturdy_ref: {reg_sr}"
-                    )
+                    logger.error(f"Couldn't connect to registrar at sturdy_ref: {reg_sr}")
             except Exception as e:
-                logger.error(
-                    f"Error registering service name: {name} using data: {reg}. Exception: {e}"
-                )
+                logger.error(f"Error registering service name: {name} using data: {reg}. Exception: {e}")
 
 
-async def register_vat_at_resolvers(
-    con_man: ConnectionManager, resolvers: list, admin: Admin
-):
+async def register_vat_at_resolvers(con_man: ConnectionManager, resolvers: list, admin: Admin):
     for res in resolvers:
         try:
             sr = res["sturdy_ref"]
             logger.info(f"Trying to register vat at resolver sturdy_ref: {sr}")
-            registrar = await con_man.try_connect(
-                sr, cast_as=persistence_capnp.HostPortResolver.Registrar
-            )
+            registrar = await con_man.try_connect(sr, cast_as=persistence_capnp.HostPortResolver.Registrar)
             if registrar:
                 req = registrar.register_request()
                 req.host = con_man.restorer.host
@@ -218,9 +192,7 @@ async def register_vat_at_resolvers(
             logger.error(f"Error registering vat. Exception: {e}")
 
 
-async def register_service_at_gateways(
-    con_man: ConnectionManager, name: str, service, gateways: list, admin: Admin
-):
+async def register_service_at_gateways(con_man: ConnectionManager, name: str, service, gateways: list, admin: Admin):
     for gw in gateways:
         try:
             sr = gw["sturdy_ref"]
@@ -298,9 +270,7 @@ async def init_and_run_service(
         name_to_service_srs = {}
 
     if restorer and restorer_container_sr:
-        restorer_container = await con_man.try_connect(
-            restorer_container_sr, cast_as=storage_capnp.Store.Container
-        )
+        restorer_container = await con_man.try_connect(restorer_container_sr, cast_as=storage_capnp.Store.Container)
         if restorer_container:
             restorer.storage_container = restorer_container
             await restorer.init_vat_id_from_container()
@@ -326,9 +296,7 @@ async def init_and_run_service(
         logger.setLevel("INFO")
         for name, s in name_to_service.items():
             await register_service_at_gateways(con_man, name, s, gateways, admin)
-            res = await restorer.save_str(
-                cap=s, fixed_sr_token=name_to_service_srs.get(name, None)
-            )
+            res = await restorer.save_str(cap=s, fixed_sr_token=name_to_service_srs.get(name, None))
             name_to_service_srs[name] = res["sturdy_ref"]
             logger.info(f"service: {name} sr: {res['sturdy_ref']}")
         logger.info(f"restorer_sr: {restorer.sturdy_ref_str()}")
@@ -379,17 +347,9 @@ def handle_default_service_args_with_dict(parser, config: dict = None):
     elif args.config_toml is not None:
         with open(args.config_toml) as f:
             toml_config = tk.load(f)
-        config.update(
-            {k: v for k, v in toml_config.items() if type(v) is not tk.items.Table}
-        )
+        config.update({k: v for k, v in toml_config.items() if type(v) is not tk.items.Table})
         if "vat" in toml_config:
-            config.update(
-                {
-                    f"vat.{k}": v
-                    for k, v in toml_config["vat"].items()
-                    if type(v) is not tk.items.Table
-                }
-            )
+            config.update({f"vat.{k}": v for k, v in toml_config["vat"].items() if type(v) is not tk.items.Table})
     else:
         parser.error("argument config_toml: expected path to config TOML file")
 
@@ -442,9 +402,7 @@ def handle_default_service_args(
     return {}, args
 
 
-def create_default_args_parser(
-    component_description: str, default_config_path: str | None = None
-):
+def create_default_args_parser(component_description: str, default_config_path: str | None = None):
     parser = argparse.ArgumentParser(description=component_description)
     parser.add_argument(
         "config_toml",

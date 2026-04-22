@@ -97,9 +97,7 @@ def create_interpolator_from_rect_grid(
             if not no_points_to_values:
                 points_to_values[(r, h)] = value
 
-    return NearestNDInterpolator(
-        np.array(points), np.array(values)
-    ), None if no_points_to_values else points_to_values
+    return NearestNDInterpolator(np.array(points), np.array(values)), None if no_points_to_values else points_to_values
 
 
 def interpolate_from_latlon(interpolator, interpolator_crs):
@@ -124,18 +122,12 @@ def rect_coordinates_to_latlon(rect_crs, coords):
     return latlons
 
 
-def create_interpolator_from_ascii_grid(
-    path_to_ascii_grid, datatype=int, no_of_header_rows=6, ignore_nodata=True
-):
-    grid, metadata = load_grid_and_metadata_from_ascii_grid(
-        path_to_ascii_grid, datatype, no_of_header_rows
-    )
+def create_interpolator_from_ascii_grid(path_to_ascii_grid, datatype=int, no_of_header_rows=6, ignore_nodata=True):
+    grid, metadata = load_grid_and_metadata_from_ascii_grid(path_to_ascii_grid, datatype, no_of_header_rows)
     return create_interpolator_from_rect_grid(grid, metadata, ignore_nodata)
 
 
-def load_grid_and_metadata_from_ascii_grid(
-    path_to_ascii_grid, datatype=int, no_of_header_rows=6
-):
+def load_grid_and_metadata_from_ascii_grid(path_to_ascii_grid, datatype=int, no_of_header_rows=6):
     metadata, _ = read_header(path_to_ascii_grid)
     grid = np.loadtxt(path_to_ascii_grid, dtype=datatype, skiprows=no_of_header_rows)
     return (grid, metadata)
@@ -188,9 +180,7 @@ def create_climate_geoGrid_interpolator_from_json_file(
         points = []
         values = []
 
-        transformer = Transformer.from_crs(
-            worldGeodeticSys84, geoTargetGrid, always_xy=True
-        )
+        transformer = Transformer.from_crs(worldGeodeticSys84, geoTargetGrid, always_xy=True)
 
         for latlon, rowcol in json.load(_):
             row, col = rowcol

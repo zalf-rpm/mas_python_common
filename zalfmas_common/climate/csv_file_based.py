@@ -27,9 +27,7 @@ from zalfmas_common import common
 from zalfmas_common.climate import common_climate_data_capnp_impl as ccdi
 
 
-class TimeSeries(
-    climate_capnp.TimeSeries.Server, common.Identifiable, common.Persistable
-):
+class TimeSeries(climate_capnp.TimeSeries.Server, common.Identifiable, common.Persistable):
     def __init__(
         self,
         metadata=None,
@@ -55,9 +53,7 @@ class TimeSeries(
         # print("creating Timeseries:", name, "ID:", self.__ID)
 
         if path_to_csv is None and dataframe is None and csv_string is None:
-            raise Exception(
-                "Missing argument, either path_to_csv or dataframe have to be supplied!"
-            )
+            raise Exception("Missing argument, either path_to_csv or dataframe have to be supplied!")
 
         # print(csv_string)
 
@@ -69,9 +65,7 @@ class TimeSeries(
 
         self._header_map = header_map
         self._supported_headers = (
-            list(climate_capnp.Element.schema.enumerants.keys())
-            if supported_headers is None
-            else supported_headers
+            list(climate_capnp.Element.schema.enumerants.keys()) if supported_headers is None else supported_headers
         )
         self._pandas_csv_config_defaults = {"skiprows": [0], "index_col": 0, "sep": ","}
         self._pandas_csv_config = {
@@ -172,18 +166,14 @@ class TimeSeries(
             elif self._path_to_csv:
                 self._df = pd.read_csv(self._path_to_csv, **self._pandas_csv_config)
             else:
-                self._df = pd.read_csv(
-                    io.StringIO(self._csv_string), **self._pandas_csv_config
-                )
+                self._df = pd.read_csv(io.StringIO(self._csv_string), **self._pandas_csv_config)
 
             if self._header_map:
                 self._df.rename(columns=self._header_map, inplace=True)
 
             # reduce headers to the supported ones
             if self._supported_headers:
-                self._df = self._df.loc[
-                    :, self._df.columns.intersection(self._supported_headers)
-                ]
+                self._df = self._df.loc[:, self._df.columns.intersection(self._supported_headers)]
 
             if self._transform_map:
                 for col_name, trans_func in self._transform_map.items():
@@ -195,12 +185,8 @@ class TimeSeries(
         return climate_capnp.TimeSeries.Resolution.daily
 
     async def range(self, _context, **kwargs):  # -> (startDate :Date, endDate :Date);
-        _context.results.startDate = ccdi.create_capnp_date(
-            date.fromisoformat(str(self.dataframe.index[0])[:10])
-        )
-        _context.results.endDate = ccdi.create_capnp_date(
-            date.fromisoformat(str(self.dataframe.index[-1])[:10])
-        )
+        _context.results.startDate = ccdi.create_capnp_date(date.fromisoformat(str(self.dataframe.index[0])[:10]))
+        _context.results.endDate = ccdi.create_capnp_date(date.fromisoformat(str(self.dataframe.index[-1])[:10]))
 
     async def header(self, **kwargs):  # () -> (header :List(Element));
         return self.dataframe.columns.tolist()
@@ -211,16 +197,10 @@ class TimeSeries(
     async def dataT(self, **kwargs):  # () -> (data :List(List(Float32)));
         return self.dataframe.T.to_numpy().tolist()
 
-    async def subrange(
-        self, _context, **kwargs
-    ):  # (from :Date, to :Date) -> (timeSeries :TimeSeries);
+    async def subrange(self, _context, **kwargs):  # (from :Date, to :Date) -> (timeSeries :TimeSeries);
         ps = _context.params
-        start_date = (
-            ccdi.create_date(ps.start) if ps._has("start") else self.dataframe.index[0]
-        )
-        end_date = (
-            ccdi.create_date(ps.end) if ps._has("end") else self.dataframe.index[-1]
-        )
+        start_date = ccdi.create_date(ps.start) if ps._has("start") else self.dataframe.index[0]
+        end_date = ccdi.create_date(ps.end) if ps._has("end") else self.dataframe.index[-1]
 
         sub_df = self.dataframe.loc[str(start_date) : str(end_date)]
 
@@ -233,9 +213,7 @@ class TimeSeries(
             restorer=self._restorer,
         )
 
-    async def subheader(
-        self, elements, **kwargs
-    ):  # (elements :List(Element)) -> (timeSeries :TimeSeries);
+    async def subheader(self, elements, **kwargs):  # (elements :List(Element)) -> (timeSeries :TimeSeries);
         sub_headers = [str(e) for e in elements]
         sub_df = self.dataframe.loc[:, sub_headers]
 
@@ -321,11 +299,7 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
 
     def timeseries_at(self, row: int, col: int, location=None):
         if not self._cache_data or (row, col) not in self._timeseries:
-            path_to_csv = (
-                self._path_to_rows
-                + "/"
-                + self._row_col_pattern.format(row=row, col=col)
-            )
+            path_to_csv = self._path_to_rows + "/" + self._row_col_pattern.format(row=row, col=col)
             if not location:
                 location = self.location_at(row, col)
             timeseries = TimeSeries.from_csv_file(
@@ -349,8 +323,7 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
         while (
             self._cache_data
             and len(self._creation_order) > 1
-            and self._process.memory_percent(memtype="rss")
-            > self._percentage_of_main_memory_use
+            and self._process.memory_percent(memtype="rss") > self._percentage_of_main_memory_use
         ):
             rc = self._creation_order[0] if len(self._creation_order) > 0 else None
             if rc != (row, col):
@@ -361,17 +334,13 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
 
         return self._timeseries[(row, col)] if self._cache_data else timeseries
 
-    async def closestTimeSeriesAt(
-        self, latlon, **kwargs
-    ):  # (latlon :Geo.LatLonCoord) -> (timeSeries :TimeSeries);
+    async def closestTimeSeriesAt(self, latlon, **kwargs):  # (latlon :Geo.LatLonCoord) -> (timeSeries :TimeSeries);
         # closest TimeSeries object which represents the whole time series
         # of the climate realization at the give climate coordinate
         row, col = map(int, self._interpolator(latlon.lat, latlon.lon))
         return self.timeseries_at(row, col)
 
-    async def timeSeriesAt(
-        self, locationId, **kwargs
-    ):  # (locationId :Text) -> (timeSeries :TimeSeries);
+    async def timeSeriesAt(self, locationId, **kwargs):  # (locationId :Text) -> (timeSeries :TimeSeries);
         rs, cs = locationId.split("/")
         row = int(rs[2:])
         col = int(cs[2:])
@@ -385,9 +354,7 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
             if not coord:
                 coord = self._rowcol_to_latlon[(row, col)]
             id = self.create_location_id(row, col)
-            name = "Row/Col:{}/{}|LatLon:{}/{}".format(
-                row, col, coord["lat"], coord["lon"]
-            )
+            name = "Row/Col:{}/{}|LatLon:{}/{}".format(row, col, coord["lat"], coord["lon"])
             loc = climate_capnp.Location.new_message(
                 id={"id": id, "name": name, "description": ""},
                 heightNN=coord["alt"],
@@ -405,9 +372,7 @@ class Dataset(climate_capnp.Dataset.Server, common.Identifiable, common.Persista
                 self._locations[(row, col)] = loc
         return self._locations[(row, col)] if self._cache_data else loc
 
-    async def locations(
-        self, **kwargs
-    ):  # locations @3 () -> (locations :List(Location));
+    async def locations(self, **kwargs):  # locations @3 () -> (locations :List(Location));
         # all the climate locations this dataset has
         locs = []
         if not self._all_locations_created:

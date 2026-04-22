@@ -157,33 +157,21 @@ def create_service_toml_config(
     resolver_alias: str | None = None,
 ) -> tk.TOMLDocument:
     doc = tk.document()
-    doc.add(
-        tk.comment(
-            header_comment if header_comment else "MAS service configuration file"
-        )
-    )
+    doc.add(tk.comment(header_comment if header_comment else "MAS service configuration file"))
     doc.add(tk.nl())
 
     services = tk.aot()
     service = tk.table()
     service["id"] = id if id else str(uuid.uuid4())
     service["name"] = name if name else f"Service {service['id']}"
-    service["description"] = (
-        description if description else f"No description for service {service['id']}"
-    )
-    service["fixed_sturdy_ref_token"] = (
-        fixed_sturdy_ref_token if fixed_sturdy_ref_token else "a_sturdy_ref_token"
-    )
+    service["description"] = description if description else f"No description for service {service['id']}"
+    service["fixed_sturdy_ref_token"] = fixed_sturdy_ref_token if fixed_sturdy_ref_token else "a_sturdy_ref_token"
     services.append(service)
 
     regs = tk.aot()
     regs.name = "services.registries"
     reg = tk.table()
-    reg["sturdy_ref"] = (
-        reg_sturdy_ref
-        if reg_sturdy_ref
-        else "capnp://the_host_key@host:port/a_sturdy_ref_token"
-    )
+    reg["sturdy_ref"] = reg_sturdy_ref if reg_sturdy_ref else "capnp://the_host_key@host:port/a_sturdy_ref_token"
     reg["category"] = reg_category if reg_category else "a registry category"
     regs.append(reg)
 
@@ -193,11 +181,7 @@ def create_service_toml_config(
     resolvers.name = "resolvers"
     res = tk.table()
     res["alias"] = resolver_alias if resolver_alias else "some_alias_for_the_resolver"
-    res["resolver_sturdy_ref"] = (
-        reg_category
-        if reg_category
-        else "capnp://the_host_key@host:port/a_sturdy_ref_token"
-    )
+    res["resolver_sturdy_ref"] = reg_category if reg_category else "capnp://the_host_key@host:port/a_sturdy_ref_token"
     resolvers.append(res)
 
     #    register_at = tk.aot()
@@ -238,18 +222,10 @@ def sturdy_ref_str(
 
 def sturdy_ref_str_from_sr(sturdy_ref: SturdyRefReader):
     sign_pk = bytearray(32)
-    sign_pk[0:8] = sturdy_ref.vat.id.publicKey0.to_bytes(
-        8, byteorder=sys.byteorder, signed=False
-    )
-    sign_pk[8:16] = sturdy_ref.vat.id.publicKey1.to_bytes(
-        8, byteorder=sys.byteorder, signed=False
-    )
-    sign_pk[16:24] = sturdy_ref.vat.id.publicKey2.to_bytes(
-        8, byteorder=sys.byteorder, signed=False
-    )
-    sign_pk[24:32] = sturdy_ref.vat.id.publicKey3.to_bytes(
-        8, byteorder=sys.byteorder, signed=False
-    )
+    sign_pk[0:8] = sturdy_ref.vat.id.publicKey0.to_bytes(8, byteorder=sys.byteorder, signed=False)
+    sign_pk[8:16] = sturdy_ref.vat.id.publicKey1.to_bytes(8, byteorder=sys.byteorder, signed=False)
+    sign_pk[16:24] = sturdy_ref.vat.id.publicKey2.to_bytes(8, byteorder=sys.byteorder, signed=False)
+    sign_pk[24:32] = sturdy_ref.vat.id.publicKey3.to_bytes(8, byteorder=sys.byteorder, signed=False)
     return sturdy_ref_str(
         sign_pk,
         sturdy_ref.vat.address.host,
@@ -281,14 +257,14 @@ class Restorer(persistence_capnp.Restorer.Server):
             str | bytes, object
         ] = {}  # sr_token to {"sealed_for": owner_guid, "cap": capability}
         self._actions = []
-        self._host: str = get_public_ip()  # socket.gethostbyname(socket.gethostname())  # socket.getfqdn() #gethostname()
+        self._host: str = (
+            get_public_ip()
+        )  # socket.gethostbyname(socket.gethostname())  # socket.getfqdn() #gethostname()
         self._port: int | None = None
         self._sign_pk, self._sign_sk = pysodium.crypto_sign_keypair()
         # self._box_pk, self._box_sk = pysodium.crypto_box_keypair()
         self.set_vat_id_from_sign_pk()
-        self._owner_guid_to_sign_pk: dict[
-            str, str
-        ] = {}  # owner guid to owner box public key
+        self._owner_guid_to_sign_pk: dict[str, str] = {}  # owner guid to owner box public key
         self._storage_container: ContainerClient | None = None
         self._restore_callback: Callable[..., _DynamicObjectReader] | None = None
         self._re_store_port: bool = False
@@ -337,9 +313,7 @@ class Restorer(persistence_capnp.Restorer.Server):
 
     async def store_port(self):
         if self.storage_container and self.re_store_port:
-            return await self.storage_container.getEntry(key="port").entry.setValue(
-                value={"uint16Value": self.port}
-            )
+            return await self.storage_container.getEntry(key="port").entry.setValue(value={"uint16Value": self.port})
 
     @property
     def host(self):
@@ -378,12 +352,8 @@ class Restorer(persistence_capnp.Restorer.Server):
                     sign_key = self._sign_pk
                 elif key == "vatSignSK":
                     sign_key = self._sign_sk
-                vat_sign_key_req = self.storage_container.addEntry_request(
-                    key=key, replaceExisting=True
-                )
-                pkb = vat_sign_key_req.init("value").init(
-                    "uint8ListValue", len(sign_key)
-                )
+                vat_sign_key_req = self.storage_container.addEntry_request(key=key, replaceExisting=True)
+                pkb = vat_sign_key_req.init("value").init("uint8ListValue", len(sign_key))
                 for i in range(len(sign_key)):
                     pkb[i] = sign_key[i]
                 return (await vat_sign_key_req.send()).success
@@ -427,9 +397,7 @@ class Restorer(persistence_capnp.Restorer.Server):
     # def sign_sr_token_by_vat_and_encode_base64(self, sr_token):
     #    return base64.urlsafe_b64encode(pysodium.crypto_sign(sr_token, self._sign_pk))
 
-    async def get_cap_from_sr_token(
-        self, sr_token: TokenReader, owner_guid: str | None = None
-    ) -> Capability | None:
+    async def get_cap_from_sr_token(self, sr_token: TokenReader, owner_guid: str | None = None) -> Capability | None:
         def get_cap(
             sr_data: dict[str, Capability | ReleaseSturdyRef] | GetvalueResult | None,
         ):
@@ -471,9 +439,7 @@ class Restorer(persistence_capnp.Restorer.Server):
             if not self.storage_container:
                 return
 
-            value = await self.storage_container.getEntry(
-                key=sr_token.text
-            ).entry.getValue()
+            value = await self.storage_container.getEntry(key=sr_token.text).entry.getValue()
             return get_cap(value)
 
         # if there is an owner
@@ -569,9 +535,9 @@ class Restorer(persistence_capnp.Restorer.Server):
                 # sv_req.init("value").textValue = json.dumps(udata)
                 # store_proms.append(sv_req.send().then(lambda resp: resp.success))
                 success = (
-                    await self.storage_container.getEntry(
-                        key=unsave_sr_token
-                    ).entry.setValue(value={"textValue": json.dumps(udata)})
+                    await self.storage_container.getEntry(key=unsave_sr_token).entry.setValue(
+                        value={"textValue": json.dumps(udata)}
+                    )
                 ).success
 
         return sr_token, unsave_sr_token
@@ -596,9 +562,7 @@ class Restorer(persistence_capnp.Restorer.Server):
 
         return SaveResultTuple(
             sturdyRef=self.sturdy_ref(sr_token),
-            unsaveSR=self.sturdy_ref(unsave_sr_token)
-            if create_unsave
-            else persistence_capnp.SturdyRef.new_message(),
+            unsaveSR=self.sturdy_ref(unsave_sr_token) if create_unsave else persistence_capnp.SturdyRef.new_message(),
         )
 
     async def save_str(
@@ -621,9 +585,7 @@ class Restorer(persistence_capnp.Restorer.Server):
         return {
             "sturdy_ref": self.sturdy_ref_str(sr_token),
             "sr_token": sr_token,
-            "unsave_sr": self.sturdy_ref_str(unsave_sr_token)
-            if create_unsave
-            else None,
+            "unsave_sr": self.sturdy_ref_str(unsave_sr_token) if create_unsave else None,
             "unsave_sr_token": unsave_sr_token if create_unsave else None,
         }
 
@@ -632,9 +594,7 @@ class Restorer(persistence_capnp.Restorer.Server):
         if owner_guid:
             # and we know about that owner
             if owner_guid in self._owner_guid_to_sign_pk:
-                verified_sr_token = pysodium.crypto_sign_open(
-                    sr_token, self._owner_guid_to_sign_pk[owner_guid]
-                )
+                verified_sr_token = pysodium.crypto_sign_open(sr_token, self._owner_guid_to_sign_pk[owner_guid])
                 data = self._issued_sr_tokens.get(verified_sr_token, None)
                 # and that known owner was actually the one who sealed the token
                 if data and owner_guid == data["ownerGuid"]:
@@ -660,9 +620,7 @@ class Restorer(persistence_capnp.Restorer.Server):
     #   localRef @0 :SturdyRef.Token;
     #   sealedBy @1 :SturdyRef.Owner;
     # }
-    async def restore_context(
-        self, context
-    ):  # restore @0 RestoreParams -> (cap :Capability);
+    async def restore_context(self, context):  # restore @0 RestoreParams -> (cap :Capability);
         owner_guid = context.params.sealedBy
         context.results.cap = await self.get_cap_from_sr_token(
             context.params.localRef, owner_guid=owner_guid.guid if owner_guid else None
@@ -680,9 +638,7 @@ class GatewayRegistrable(persistence_capnp.GatewayRegistrable.Server):
 
     # sturdyRefAtGateway @0 (gatewaySR :SturdyRef, gatewayId: Text) -> (selfAtGatewaySR :SturdyRef);
     @override
-    async def sturdyRefAtGateway(
-        self, gatewaySR: SturdyRefReader, gatewayId: str, _context, **kwargs
-    ):
+    async def sturdyRefAtGateway(self, gatewaySR: SturdyRefReader, gatewayId: str, _context, **kwargs):
         try:
             logger.info(f"Trying to register vat at gateway sturdy_ref: {gatewaySR}")
             gateway = await self.con_man.try_connect(gatewaySR)
@@ -711,9 +667,7 @@ class GatewayRegistrable(persistence_capnp.GatewayRegistrable.Server):
                         await hb.beat()
 
                 self.hb_tasks.append(asyncio.create_task(heartbeat()))
-                logger.info(
-                    f"sr@'{gw_id}': {sturdy_ref_str_from_sr(process_sr_at_gateway)}"
-                )
+                logger.info(f"sr@'{gw_id}': {sturdy_ref_str_from_sr(process_sr_at_gateway)}")
 
                 return process_sr_at_gateway
             else:
@@ -821,9 +775,7 @@ class Persistable(persistence_capnp.Persistent.Server):
         self._restorer = r
 
     @override
-    async def save(
-        self, sealFor, _context, **kwargs
-    ):  # save @0 () -> (sturdyRef :Text, unsaveSR :Text);
+    async def save(self, sealFor, _context, **kwargs):  # save @0 () -> (sturdyRef :Text, unsaveSR :Text);
         def save_res(res):
             _context.results.sturdyRef = res["sturdy_ref"]
             _context.results.unsaveSR = res["unsave_sr"]
@@ -873,15 +825,11 @@ def create_sturdy_ref_from_sr_str(sturdy_ref: str) -> SturdyRefBuilder:
         path_segs = url.path[1:].split("/")
         if len(path_segs) == 1:
             if len(path_segs[0]) > 0:
-                sr.localRef = persistence_capnp.SturdyRef.Token.new_message(
-                    text=path_segs[0]
-                )
+                sr.localRef = persistence_capnp.SturdyRef.Token.new_message(text=path_segs[0])
         elif len(path_segs) == 2:
             resolve_b64_vat_id_or_alias = path_segs[0]
             if len(path_segs[1]) > 0:
-                sr.localRef = persistence_capnp.SturdyRef.Token.new_message(
-                    text=path_segs[1]
-                )
+                sr.localRef = persistence_capnp.SturdyRef.Token.new_message(text=path_segs[1])
         # sr_token is base64 encoded if there's an owner (because of signing)
         if sr.localRef and owner_guid:
             sr.localRef = persistence_capnp.SturdyRef.Token.new_message(
@@ -892,9 +840,7 @@ def create_sturdy_ref_from_sr_str(sturdy_ref: str) -> SturdyRefBuilder:
 
 
 class ConnectionManager:
-    def __init__(
-        self, restorer: Restorer | None = None, cache_connections: bool = True
-    ):
+    def __init__(self, restorer: Restorer | None = None, cache_connections: bool = True):
         self._connections: dict[str, _CapabilityClient] = {}
         self._restorer: Restorer = restorer if restorer else Restorer()
         self._cache_connections: bool = cache_connections
@@ -1001,21 +947,15 @@ class ConnectionManager:
                     return remote_object.cast_as(cast_as)
             elif sr_token:
                 restorer = bootstrap_cap.cast_as(persistence_capnp.Restorer)
-                dyn_obj_reader = (
-                    await restorer.restore(localRef={"text": sr_token})
-                ).cap
+                dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
                 # node = restorer.schema.node
                 # if node.displayName == f"{persistence_capnp.__name__}:Restorer": # and node.id == 11508422749279825468
-                dyn_obj_reader = (
-                    await restorer.restore(localRef={"text": sr_token})
-                ).cap
+                dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
                 if dyn_obj_reader is not None:
                     return (
                         dyn_obj_reader.as_interface(cast_as)
                         if cast_as
-                        else dyn_obj_reader.as_interface(
-                            capnp.lib.capnp._InterfaceSchema()
-                        )
+                        else dyn_obj_reader.as_interface(capnp.lib.capnp._InterfaceSchema())
                     )
             else:
                 return bootstrap_cap.cast_as(cast_as) if cast_as else bootstrap_cap
@@ -1043,16 +983,12 @@ class ConnectionManager:
                 logger.info(f"Couldn't connect to sturdy_ref at {sturdy_ref}!")
                 return None
             retry_count -= 1
-            logger.info(
-                f"Trying to connect to {sturdy_ref} again in {retry_secs} secs!"
-            )
+            logger.info(f"Trying to connect to {sturdy_ref} again in {retry_secs} secs!")
             await asyncio.sleep(retry_secs)
             retry_secs += 1
 
 
-def load_capnp_module(
-    path_and_type: str, def_type: str = "Text", new_message: bool = False, **kwargs
-):
+def load_capnp_module(path_and_type: str, def_type: str = "Text", new_message: bool = False, **kwargs):
     """ "
     use like this
     if __name__ == "__main__":

@@ -40,10 +40,11 @@ pixi-pycharm = ">=0.0.10,<0.0.11"
 # zalfmas-capnp-schemas = { path = "../mas_capnproto_schemas", develop = true }
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.14.0"
+ruff = "^0.15.0"
 
 [tool.ruff]
-target-version = "py310"
+line-length = 120
+target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 ignore = ["E501"]

@@ -44,10 +44,7 @@ def create_env_soil_profile_entry_from_capnp_soil_layers(sp_layers):
                 layer_desc["PoreVolume"] = [prop.f32Value / 100.0, "m3 m-3"]
             elif prop.name == "soilMoisture" and prop.which == "f32Value":
                 layer_desc["SoilMoisturePercentFC"] = [prop.f32Value, "%"]
-            elif (
-                prop.name == "soilWaterConductivityCoefficient"
-                and prop.which == "f32Value"
-            ):
+            elif prop.name == "soilWaterConductivityCoefficient" and prop.which == "f32Value":
                 layer_desc["Lambda"] = [prop.f32Value, ""]
             elif prop.name == "ammonium" and prop.which == "f32Value":
                 layer_desc["SoilAmmonium"] = [prop.f32Value, "kg NH4-N m-3"]
@@ -117,30 +114,22 @@ def create_layer(row, prev_depth, only_raw_data, no_units=False):
     if row["KA5_texture_class"] is not None:
         layer["KA5TextureClass"] = row["KA5_texture_class"]
     elif not only_raw_data and row["sand"] is not None and row["clay"] is not None:
-        layer["KA5TextureClass"] = sand_and_clay_to_ka5_texture(
-            float(row["sand"]) / 100.0, float(row["clay"]) / 100.0
-        )
+        layer["KA5TextureClass"] = sand_and_clay_to_ka5_texture(float(row["sand"]) / 100.0, float(row["clay"]) / 100.0)
 
     if row["sand"] is not None:
         layer["Sand"] = add_units(float(row["sand"]) / 100.0, "% [0-1]")
     elif not only_raw_data and row["KA5_texture_class"] is not None:
-        layer["Sand"] = add_units(
-            ka5_texture_to_sand(row["KA5_texture_class"]), "% [0-1]"
-        )
+        layer["Sand"] = add_units(ka5_texture_to_sand(row["KA5_texture_class"]), "% [0-1]")
 
     if row["clay"] is not None:
         layer["Clay"] = add_units(float(row["clay"]) / 100.0, "% [0-1]")
     elif not only_raw_data and row["KA5_texture_class"] is not None:
-        layer["Clay"] = add_units(
-            ka5_texture_to_clay(row["KA5_texture_class"]), "% [0-1]"
-        )
+        layer["Clay"] = add_units(ka5_texture_to_clay(row["KA5_texture_class"]), "% [0-1]")
 
     if row["silt"] is not None:
         layer["Silt"] = add_units(float(row["silt"]) / 100.0, "% [0-1]")
     elif not only_raw_data and row["KA5_texture_class"] is not None:
-        layer["Silt"] = add_units(
-            ka5_texture_to_silt(row["KA5_texture_class"]), "% [0-1]"
-        )
+        layer["Silt"] = add_units(ka5_texture_to_silt(row["KA5_texture_class"]), "% [0-1]")
 
     if row["ph"] is not None:
         layer["pH"] = float(row["ph"])
@@ -149,9 +138,7 @@ def create_layer(row, prev_depth, only_raw_data, no_units=False):
         layer["Sceleton"] = add_units(float(row["sceleton"]) / 100.0, "vol% [0-1]")
 
     if row["soil_organic_carbon"] is not None:
-        layer["SoilOrganicCarbon"] = add_units(
-            float(row["soil_organic_carbon"]), "mass% [0-100]"
-        )
+        layer["SoilOrganicCarbon"] = add_units(float(row["soil_organic_carbon"]), "mass% [0-100]")
     elif not only_raw_data and row["soil_organic_matter"] is not None:
         layer["SoilOrganicCarbon"] = add_units(
             organic_matter_to_organic_carbon(float(row["soil_organic_matter"])),
@@ -159,9 +146,7 @@ def create_layer(row, prev_depth, only_raw_data, no_units=False):
         )
 
     if row["soil_organic_matter"] is not None:
-        layer["SoilOrganicMatter"] = add_units(
-            float(row["soil_organic_matter"]) / 100.0, "mass% [0-1]"
-        )
+        layer["SoilOrganicMatter"] = add_units(float(row["soil_organic_matter"]) / 100.0, "mass% [0-1]")
     elif not only_raw_data and row["soil_organic_carbon"] is not None:
         layer["SoilOrganicMatter"] = add_units(
             organic_carbon_to_organic_matter(float(row["soil_organic_carbon"]) / 100.0),
@@ -185,22 +170,16 @@ def create_layer(row, prev_depth, only_raw_data, no_units=False):
         )
 
     if row["field_capacity"] is not None:
-        layer["FieldCapacity"] = add_units(
-            float(row["field_capacity"]) / 100.0, "vol% [0-1]"
-        )
+        layer["FieldCapacity"] = add_units(float(row["field_capacity"]) / 100.0, "vol% [0-1]")
 
     if row["permanent_wilting_point"] is not None:
-        layer["PermanentWiltingPoint"] = add_units(
-            float(row["permanent_wilting_point"]) / 100.0, "vol% [0-1]"
-        )
+        layer["PermanentWiltingPoint"] = add_units(float(row["permanent_wilting_point"]) / 100.0, "vol% [0-1]")
 
     if row["saturation"] is not None:
         layer["PoreVolume"] = add_units(float(row["saturation"]) / 100.0, "vol% [0-1]")
 
     if row["initial_soil_moisture"] is not None:
-        layer["SoilMoisturePercentFC"] = add_units(
-            float(row["initial_soil_moisture"]), "% [0-100]"
-        )
+        layer["SoilMoisturePercentFC"] = add_units(float(row["initial_soil_moisture"]), "% [0-100]")
 
     if row["soil_water_conductivity_coefficient"] is not None:
         layer["Lambda"] = float(row["soil_water_conductivity_coefficient"])
@@ -257,11 +236,7 @@ from soil_profile
 order by id, layer_depth"""
 
     con.row_factory = sqlite3.Row
-    rows = (
-        con.cursor().execute(query, (profile_id,))
-        if profile_id
-        else con.cursor().execute(query)
-    )
+    rows = con.cursor().execute(query, (profile_id,)) if profile_id else con.cursor().execute(query)
     last_profile_id = None
     profiles = []
     layers = []
@@ -276,9 +251,7 @@ order by id, layer_depth"""
             layers = []
             prev_depth = 0
 
-        layer, prev_depth = create_layer(
-            row, prev_depth, only_raw_data, no_units=no_units
-        )
+        layer, prev_depth = create_layer(row, prev_depth, only_raw_data, no_units=no_units)
         layers.append(layer)
 
     # store also last profile
@@ -286,9 +259,7 @@ order by id, layer_depth"""
     return profiles
 
 
-def get_soil_profile_group(
-    con, profile_group_id=None, only_raw_data=True, no_units=False
-):
+def get_soil_profile_group(con, profile_group_id=None, only_raw_data=True, no_units=False):
     """return soil profile groups from the database connection for given profile group id"""
     query = f"""select 
 polygon_id,
@@ -322,11 +293,7 @@ from soil_profile_all
 order by polygon_id, profile_id_in_polygon, layer_depth"""
 
     con.row_factory = sqlite3.Row
-    rows = (
-        con.cursor().execute(query, (profile_group_id,))
-        if profile_group_id
-        else con.cursor().execute(query)
-    )
+    rows = con.cursor().execute(query, (profile_group_id,)) if profile_group_id else con.cursor().execute(query)
     last_profile_group_id = None
     last_profile_id = None
     profile_groups = []
@@ -364,9 +331,7 @@ order by polygon_id, profile_id_in_polygon, layer_depth"""
         range_percentage = row["range_percentage_of_area"]
         avg_percentage = float(row["avg_range_percentage_of_area"])
 
-        layer, prev_depth = create_layer(
-            row, prev_depth, only_raw_data, no_units=no_units
-        )
+        layer, prev_depth = create_layer(row, prev_depth, only_raw_data, no_units=no_units)
         layers.append(layer)
 
     # store also last profile and profile group
@@ -382,17 +347,11 @@ order by polygon_id, profile_id_in_polygon, layer_depth"""
     return profile_groups
 
 
-def available_soil_parameters_group(
-    con, table="soil_profile_all", id_col="polygon_id", only_raw_data=True
-):
-    return available_soil_parameters(
-        con, table=table, id_col=id_col, only_raw_data=only_raw_data
-    )
+def available_soil_parameters_group(con, table="soil_profile_all", id_col="polygon_id", only_raw_data=True):
+    return available_soil_parameters(con, table=table, id_col=id_col, only_raw_data=only_raw_data)
 
 
-def available_soil_parameters(
-    con, table="soil_profile", id_col="id", only_raw_data=True
-):
+def available_soil_parameters(con, table="soil_profile", id_col="id", only_raw_data=True):
     "return which soil parameters in the database are always there (mandatory) and which are sometimes there (optional)"
 
     query = "select count({}) as count from {} where {} is null"
@@ -430,9 +389,7 @@ def available_soil_parameters(
         no_of_rows = int(row[0])
 
     for param in params.keys():
-        for row in con.cursor().execute(
-            f"select count({id_col}) as count from {table} where {param} is null"
-        ):
+        for row in con.cursor().execute(f"select count({id_col}) as count from {table} where {param} is null"):
             row_count = int(row["count"])
             if row_count == 0:
                 mandatory.append(params[param])
@@ -450,17 +407,11 @@ def available_soil_parameters(
         move_from_optional("Sand", if_="KA5TextureClass" in mandatory)
         move_from_optional("Clay", if_="KA5TextureClass" in mandatory)
         move_from_optional("Silt", if_="KA5TextureClass" in mandatory)
-        move_from_optional(
-            "KA5TextureClass", if_="Sand" in mandatory and "Clay" in mandatory
-        )
+        move_from_optional("KA5TextureClass", if_="Sand" in mandatory and "Clay" in mandatory)
         move_from_optional("SoilOrganicCarbon", if_="SoilOrganicMatter" in mandatory)
         move_from_optional("SoilOrganicMatter", if_="SoilOrganicCarbon" in mandatory)
-        move_from_optional(
-            "SoilRawDensity", if_="SoilBulkDensity" in mandatory and "Clay" in mandatory
-        )
-        move_from_optional(
-            "SoilBulkDensity", if_="SoilRawDensity" in mandatory and "Clay" in mandatory
-        )
+        move_from_optional("SoilRawDensity", if_="SoilBulkDensity" in mandatory and "Clay" in mandatory)
+        move_from_optional("SoilBulkDensity", if_="SoilRawDensity" in mandatory and "Clay" in mandatory)
 
     return {"mandatory": mandatory, "optional": optional}
 

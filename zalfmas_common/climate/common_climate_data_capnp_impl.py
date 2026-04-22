@@ -40,9 +40,7 @@ def read_header(path_to_ascii_grid_file):
     return metadata, header_str
 
 
-def read_file_and_create_interpolator(
-    path_to_grid, dtype=int, skiprows=6, confirm_creation=False
-):
+def read_file_and_create_interpolator(path_to_grid, dtype=int, skiprows=6, confirm_creation=False):
     """read file and metadata and create interpolator"""
 
     metadata, _ = ragm.read_header(path_to_grid)
@@ -95,10 +93,8 @@ def create_lat_lon_interpolator_from_json_coords_file(path_to_json_coords_file):
 def lat_lon_interpolator(path_to_latlon_to_rowcol_json_file):
     "create an interpolator for the macsur grid"
     if not hasattr(lat_lon_interpolator, "interpol"):
-        lat_lon_interpolator.interpol = (
-            create_lat_lon_interpolator_from_json_coords_file(
-                path_to_latlon_to_rowcol_json_file
-            )
+        lat_lon_interpolator.interpol = create_lat_lon_interpolator_from_json_coords_file(
+            path_to_latlon_to_rowcol_json_file
         )
     return lat_lon_interpolator.interpol
 
@@ -342,9 +338,7 @@ class MetadataInfo(climate_capnp.Metadata.Information.Server):
             "description": lambda v: {"id": v, "name": v, "description": v},
         }
 
-    async def forOne(
-        self, entry, _context, **kwargs
-    ):  # forOne @0 (entry :Entry) -> Common.IdInformation;
+    async def forOne(self, entry, _context, **kwargs):  # forOne @0 (entry :Entry) -> Common.IdInformation;
         which = entry.which()
         value = self._entry_map[which]
         id_info = self._entry_to_info[which](value)
@@ -353,9 +347,7 @@ class MetadataInfo(climate_capnp.Metadata.Information.Server):
         r.name = id_info["name"]
         r.description = id_info["description"]
 
-    async def forAll(
-        self, **kwargs
-    ):  # forAll @0 () -> (all :List(Common.IdInformation));
+    async def forAll(self, **kwargs):  # forAll @0 () -> (all :List(Common.IdInformation));
         id_infos = []
         for e in self._meta.entries:
             which = e.which()
@@ -385,9 +377,7 @@ class Service(
 
         self._meta_plus_datasets = meta_plus_datasets
 
-    async def getAvailableDatasets(
-        self, **kwargs
-    ):  # getAvailableDatasets @0 () -> (datasets :List(MetaPlusData));
+    async def getAvailableDatasets(self, **kwargs):  # getAvailableDatasets @0 () -> (datasets :List(MetaPlusData));
         """get a list of all available datasets"""
         return self._meta_plus_datasets
 
@@ -400,9 +390,7 @@ class Service(
         def contains_search_entries(mds):
             for e in mds.meta.entries:
                 which = e.which()
-                if which in search_entry_to_value and search_entry_to_value[
-                    which
-                ] != access_entries(which)(e):
+                if which in search_entry_to_value and search_entry_to_value[which] != access_entries(which)(e):
                     return False
             return True
 

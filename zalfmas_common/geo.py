@@ -144,9 +144,7 @@ def transform_from_to_geo_coord(from_coord, to_name, default=None):
     if from_coord_schema == geo_capnp.LatLonCoord.schema:
         trans = transform_from_to_geo_coord.cache["latlon"].setdefault(
             to_name,
-            Transformer.from_crs(
-                name_to_crs("latlon"), name_to_crs(to_name), always_xy=True
-            ),
+            Transformer.from_crs(name_to_crs("latlon"), name_to_crs(to_name), always_xy=True),
         )
         res = trans.transform(*get_xy(from_coord))
         to_coord = name_to_struct_instance(to_name, x=res[0], y=res[1])
@@ -154,9 +152,7 @@ def transform_from_to_geo_coord(from_coord, to_name, default=None):
         utm_id = "utm" + str(from_coord.zone) + from_coord.latitudeBand
         trans = transform_from_to_geo_coord.cache[utm_id].setdefault(
             to_name,
-            Transformer.from_crs(
-                name_to_crs(utm_id), name_to_crs(to_name), always_xy=True
-            ),
+            Transformer.from_crs(name_to_crs(utm_id), name_to_crs(to_name), always_xy=True),
         )
         res = trans.transform(*get_xy(from_coord))
         to_coord = name_to_struct_instance(to_name, x=res[0], y=res[1])
@@ -164,9 +160,7 @@ def transform_from_to_geo_coord(from_coord, to_name, default=None):
         gk_id = "gk" + str(from_coord.meridian)
         trans = transform_from_to_geo_coord.cache[gk_id].setdefault(
             to_name,
-            Transformer.from_crs(
-                name_to_crs(gk_id), name_to_crs(to_name), always_xy=True
-            ),
+            Transformer.from_crs(name_to_crs(gk_id), name_to_crs(to_name), always_xy=True),
         )
         res = trans.transform(*get_xy(from_coord))
         to_coord = name_to_struct_instance(to_name, x=res[0], y=res[1])

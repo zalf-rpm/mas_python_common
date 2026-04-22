@@ -87,11 +87,7 @@ def oid_to_string(oid, include_time_agg):
             + str(oid["fromLayer"] + 1)
             + ", "
             + str(oid["toLayer"] + 1)
-            + (
-                ", " + op_to_string(oid["layerAggOp"])
-                if oid["layerAggOp"] != OP_NONE
-                else ""
-            )
+            + (", " + op_to_string(oid["layerAggOp"]) if oid["layerAggOp"] != OP_NONE else "")
             + "]"
         )
     elif oid["fromLayer"] >= 0:
@@ -103,9 +99,7 @@ def oid_to_string(oid, include_time_agg):
     return oss
 
 
-def write_output_header_rows(
-    output_ids, include_header_row=True, include_units_row=True, include_time_agg=False
-):
+def write_output_header_rows(output_ids, include_header_row=True, include_units_row=True, include_time_agg=False):
     """write header rows"""
     row1 = []
     row2 = []
@@ -134,15 +128,9 @@ def write_output_header_rows(
                     else oid["displayName"]
                 )
             elif is_range:
-                str1 += (
-                    (oid["name"] + "_" + str(i))
-                    if len(oid["displayName"]) == 0
-                    else oid["displayName"]
-                )
+                str1 += (oid["name"] + "_" + str(i)) if len(oid["displayName"]) == 0 else oid["displayName"]
             else:
-                str1 += (
-                    oid["name"] if len(oid["displayName"]) == 0 else oid["displayName"]
-                )
+                str1 += oid["name"] if len(oid["displayName"]) == 0 else oid["displayName"]
             row1.append(str1)
             row4.append("j:" + oid["jsonInput"].replace('"', ""))
             row3.append("m:" + oid_to_string(oid, include_time_agg))
@@ -170,23 +158,13 @@ def write_output(output_ids, values, round_ids=None):
             i = 0
             row = []
             for oid in output_ids:
-                oid_name = (
-                    oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
-                )
+                oid_name = oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
                 j__ = values[i][k]
                 if isinstance(j__, list):
                     for jv_ in j__:
-                        row.append(
-                            round(jv_, round_ids[oid_name])
-                            if oid_name in round_ids
-                            else jv_
-                        )
+                        row.append(round(jv_, round_ids[oid_name]) if oid_name in round_ids else jv_)
                 else:
-                    row.append(
-                        round(j__, round_ids[oid_name])
-                        if oid_name in round_ids
-                        else j__
-                    )
+                    row.append(round(j__, round_ids[oid_name]) if oid_name in round_ids else j__)
                 i += 1
             out.append(row)
     return out
@@ -200,21 +178,13 @@ def write_output_obj(output_ids, values, round_ids=None):
     for obj in values:
         row = []
         for oid in output_ids:
-            oid_name = (
-                oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
-            )
+            oid_name = oid["displayName"] if len(oid["displayName"]) > 0 else oid["name"]
             j__ = obj.get(oid_name, "")
             if isinstance(j__, list):
                 for jv_ in j__:
-                    row.append(
-                        round(jv_, round_ids[oid_name])
-                        if oid_name in round_ids
-                        else jv_
-                    )
+                    row.append(round(jv_, round_ids[oid_name]) if oid_name in round_ids else jv_)
             else:
-                row.append(
-                    round(j__, round_ids[oid_name]) if oid_name in round_ids else j__
-                )
+                row.append(round(j__, round_ids[oid_name]) if oid_name in round_ids else j__)
         out.append(row)
     return out
 
@@ -459,9 +429,7 @@ def supported_patterns():
             }
         return {
             "result": j__,
-            "errors": [
-                "Couldn't convert humus level to corg: " + json.dumps(j__) + "!"
-            ],
+            "errors": ["Couldn't convert humus level to corg: " + json.dumps(j__) + "!"],
             "success": False,
         }
 
@@ -474,11 +442,7 @@ def supported_patterns():
             }
         return {
             "result": j__,
-            "errors": [
-                "Couldn't convert bulk density class to raw density using function: "
-                + json.dumps(j__)
-                + "!"
-            ],
+            "errors": ["Couldn't convert bulk density class to raw density using function: " + json.dumps(j__) + "!"],
             "success": False,
         }
 
@@ -491,11 +455,7 @@ def supported_patterns():
             }
         return {
             "result": j__,
-            "errors": [
-                "Couldn't get soil clay content from KA5 soil class: "
-                + json.dumps(j__)
-                + "!"
-            ],
+            "errors": ["Couldn't get soil clay content from KA5 soil class: " + json.dumps(j__) + "!"],
             "success": False,
         }
 
@@ -508,11 +468,7 @@ def supported_patterns():
             }
         return {
             "result": j__,
-            "errors": [
-                "Couldn't get soil sand content from KA5 soil class: "
-                + json.dumps(j__)
-                + "!"
-            ],
+            "errors": ["Couldn't get soil sand content from KA5 soil class: " + json.dumps(j__) + "!"],
             "success": False,
         }
 
@@ -525,11 +481,7 @@ def supported_patterns():
             }
         return {
             "result": j__,
-            "errors": [
-                "Couldn't get lambda value from soil sand and clay content: "
-                + json.dumps(j__)
-                + "!"
-            ],
+            "errors": ["Couldn't get lambda value from soil sand and clay content: " + json.dumps(j__) + "!"],
             "success": False,
         }
 
@@ -538,11 +490,7 @@ def supported_patterns():
             return {"result": j__[1] / 100.0, "errors": [], "success": True}
         return {
             "result": j__,
-            "errors": [
-                "Couldn't convert percent to decimal percent value: "
-                + json.dumps(j__)
-                + "!"
-            ],
+            "errors": ["Couldn't convert percent to decimal percent value: " + json.dumps(j__) + "!"],
             "success": False,
         }
 
@@ -651,9 +599,7 @@ def create_env_json_from_json_config(crop_site_sim):
     return env
 
 
-def create_env_climate_data_dict_from_capnp_time_series_data(
-    ts_header, ts_range, ts_data_transposed
-):
+def create_env_climate_data_dict_from_capnp_time_series_data(ts_header, ts_range, ts_data_transposed):
     """add climate data from capnp time series structures separately to env"""
 
     ts_data = ts_data_transposed
