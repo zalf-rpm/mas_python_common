@@ -17,9 +17,9 @@ import json
 from datetime import date
 
 import numpy as np
+from mas.schema.climate import climate_capnp
 from pyproj import CRS
 from scipy.interpolate import NearestNDInterpolator
-from zalfmas_capnp_schemas_with_stubs import climate_capnp
 
 from zalfmas_common import common
 from zalfmas_common import rect_ascii_grid_management as ragm

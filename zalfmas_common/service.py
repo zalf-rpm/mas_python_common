@@ -20,14 +20,10 @@ import threading
 import capnp
 import tomli as ti
 import tomlkit as tk
-from zalfmas_capnp_schemas_with_stubs import (
-    persistence_capnp,
-    service_capnp,
-    storage_capnp,
-)
-from zalfmas_capnp_schemas_with_stubs import (
-    registry_capnp as reg_capnp,
-)
+from mas.schema.persistence import persistence_capnp
+from mas.schema.registry import registry_capnp as reg_capnp
+from mas.schema.service import service_capnp
+from mas.schema.storage import storage_capnp
 
 from zalfmas_common import common
 from zalfmas_common.common import ConnectionManager

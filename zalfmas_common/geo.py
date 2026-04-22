@@ -12,8 +12,8 @@
 
 from collections import defaultdict
 
+from mas.schema.geo import geo_capnp
 from pyproj import CRS, Transformer
-from zalfmas_capnp_schemas_with_stubs import geo_capnp
 
 
 def name_to_struct_instance(name, x=None, y=None, default=None):
