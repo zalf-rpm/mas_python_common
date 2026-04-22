@@ -16,6 +16,7 @@ import asyncio
 import logging
 import os
 import threading
+from typing import Any
 
 import capnp
 import tomli as ti
@@ -53,7 +54,9 @@ class AdministrableService:
 
 
 class Admin(service_capnp.Admin.Server, common.Identifiable):
-    def __init__(self, services, id=None, name=None, description=None, timeout=0):
+    def __init__(
+        self, services, id: str | None = None, name: str | None = None, description: str | None = None, timeout: int = 0
+    ):
         common.Identifiable.__init__(self, id, name, description)
 
         self._services = services
@@ -217,7 +220,7 @@ async def register_service_at_gateways(con_man: ConnectionManager, name: str, se
 
 
 async def init_and_run_service_from_config(
-    config: dict,
+    config: dict[str, Any],
     service,
     restorer: common.Restorer | None = None,
     con_man: common.ConnectionManager | None = None,
