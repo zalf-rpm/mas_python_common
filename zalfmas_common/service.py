@@ -135,8 +135,8 @@ async def register_services(
                 reg_name = reg.get("name", "")
                 reg_cat_id = reg.get("category_id", "")
                 logger.info(f"Trying to register service with name: {reg_name} @ category: {reg_cat_id}")
-                registrar = await con_man.try_connect(reg_sr, cast_as=reg_capnp.Registrar)
-                if registrar:
+                if (registrar_cap := await con_man.try_connect(reg_sr)) is not None:
+                    registrar = registrar_cap.cast_as(reg_capnp.Registrar)
                     r = await registrar.register(cap=cap, regName=reg_name, categoryId=reg_cat_id)
                     unreg_action = r.unreg
                     rereg_sr = r.reregSR
@@ -153,8 +153,8 @@ async def register_vat_at_resolvers(con_man: ConnectionManager, resolvers: list,
         try:
             sr = res["sturdy_ref"]
             logger.info(f"Trying to register vat at resolver sturdy_ref: {sr}")
-            registrar = await con_man.try_connect(sr, cast_as=persistence_capnp.HostPortResolver.Registrar)
-            if registrar:
+            if (registrar_cap := await con_man.try_connect(sr)) is not None:
+                registrar = registrar_cap.cast_as(persistence_capnp.HostPortResolver.Registrar)
                 req = registrar.register_request()
                 req.host = con_man.restorer.host
                 req.port = con_man.restorer.port
@@ -193,8 +193,8 @@ async def register_service_at_gateways(con_man: ConnectionManager, name: str, se
         try:
             sr = gw["sturdy_ref"]
             logger.info(f"Trying to register vat at gateway sturdy_ref: {sr}")
-            gateway = await con_man.try_connect(sr, cast_as=persistence_capnp.Gateway)
-            if gateway:
+            if (gateway_cap := await con_man.try_connect(sr)) is not None:
+                gateway = gateway_cap.cast_as(persistence_capnp.Gateway)
                 res = await gateway.register(service)
                 hb = res.heartbeat
                 hb_int = res.secsHeartbeatInterval
@@ -219,8 +219,8 @@ async def register_service_at_gateways(con_man: ConnectionManager, name: str, se
 async def init_and_run_service_from_config(
     config: dict,
     service,
-    restorer: common.Restorer = None,
-    con_man: common.ConnectionManager = None,
+    restorer: common.Restorer | None = None,
+    con_man: common.ConnectionManager | None = None,
     run_before_enter_eventloop=None,
 ):
     cs = config["service"]
@@ -266,8 +266,8 @@ async def init_and_run_service(
         name_to_service_srs = {}
 
     if restorer and restorer_container_sr:
-        restorer_container = await con_man.try_connect(restorer_container_sr, cast_as=storage_capnp.Store.Container)
-        if restorer_container:
+        if (restorer_container_cap := await con_man.try_connect(restorer_container_sr)) is not None:
+            restorer_container = restorer_container_cap.cast_as(storage_capnp.Store.Container)
             restorer.storage_container = restorer_container
             await restorer.init_vat_id_from_container()
             if not port:
