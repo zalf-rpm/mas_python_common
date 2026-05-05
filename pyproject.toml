@@ -14,7 +14,6 @@ dependencies = [
   "psutil>=7.0.0,<8.0.0",
   "tomlkit>=0.14.0,<0.15.0",
   "zalfmas-capnp-schemas>=0.1.61,<0.2.0",
-  "tomli (>=2.3.0,<3.0.0)",
   "pytest (>=9.0.3,<10.0.0)",
 ]
 

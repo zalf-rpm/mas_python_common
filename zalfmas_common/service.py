@@ -16,10 +16,10 @@ import asyncio
 import logging
 import os
 import threading
+import tomllib as ti
 from typing import Any
 
 import capnp
-import tomli as ti
 import tomlkit as tk
 from mas.schema.persistence import persistence_capnp
 from mas.schema.registry import registry_capnp as reg_capnp
