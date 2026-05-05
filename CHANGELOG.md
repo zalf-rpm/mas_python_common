@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.42](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.41...v0.1.42) (2026-05-05)
+
+
+### Features
+
+* add more type annotations and some guard to improve maintainability of code ([b9e7956](https://github.com/zalf-rpm/mas_python_common/commit/b9e79568080ff983014413cea1ab97f2e914df3f))
+
 ## [0.1.41](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.40...v0.1.41) (2026-03-27)
 
 
