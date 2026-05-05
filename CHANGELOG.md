@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.43](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.42...v0.1.43) (2026-05-05)
+
+
+### Features
+
+* replace tomli with build in tomllib ([2d477d0](https://github.com/zalf-rpm/mas_python_common/commit/2d477d0c4162c5e5d83632b6cb680d881a613b8d))
+
 ## [0.1.42](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.41...v0.1.42) (2026-05-05)
 
 
