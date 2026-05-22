@@ -116,7 +116,7 @@ def copy_and_set_fbp_attrs(old_ip: IPReader, new_ip: IPBuilder, **kwargs):
 
     # set new attribute if there
     for attr_name, new_index in attr_name_to_new_index.items():
-        if not new_index:
+        if new_index is None:
             return
         attrs[new_index].key = attr_name
         attrs[new_index].value = kwargs[attr_name]
