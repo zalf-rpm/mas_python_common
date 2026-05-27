@@ -988,6 +988,27 @@ class ConnectionManager:
             retry_secs += 1
 
 
+def schema_from_content_type_string(text_with_id: str):
+    text_with_id = text_with_id.strip()
+    if not text_with_id.startswith("@"):
+        msg = "content_type_string must start with '@'"
+        logger.error(msg)
+        raise ValueError(msg)
+    eq_pos = text_with_id.find("=")
+    if eq_pos != -1:
+        type_name = text_with_id[eq_pos + 1 :].strip()
+        struct_type_id = text_with_id[:eq_pos].strip()
+    else:
+        type_name = None
+        struct_type_id = text_with_id
+    schema = capnp._embedded_schema_loader.get(int(struct_type_id[1:], 0))
+    if type_name is not None and schema.node.displayName != type_name:
+        logger.warning(
+            f"schema.node.displayName '{schema.node.displayName}' doesn't match expected '{type_name}' for id {struct_type_id}"
+        )
+    return schema
+
+
 def load_capnp_module(path_and_type: str, def_type: str = "Text", new_message: bool = False, **kwargs):
     """ "
     use like this
