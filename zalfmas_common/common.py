@@ -86,7 +86,9 @@ def cast_to_schema(c: Any, schema_or_schema_type: capnp.lib.capnp._Schema | capn
     return c
 
 
-def get_fbp_attr(ip: IPReader, attr_name: str | None, schema: capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType = None):
+def get_fbp_attr(
+    ip: IPReader, attr_name: str | None, schema: capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType = None
+):
     if ip.attributes and attr_name:
         for kv in ip.attributes:
             if kv.key == attr_name:
@@ -1035,6 +1037,7 @@ _BUILTIN_TYPES = {
     "capability": capnp.types.AnyPointer,
 }
 
+
 def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType:
     """Resolve a content type identifier to its capnp type representation.
 
@@ -1067,13 +1070,12 @@ def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._Schem
     else:
         type_name = None
         struct_type_id = text
-    schema = capnp._embedded_schema_loader.get(int(struct_type_id[1:], 16))
+    schema = common_capnp.get_schema_by_id(int(struct_type_id[1:], 16))
     if type_name is not None and schema.node.displayName != type_name:
         logger.warning(
             f"schema.node.displayName '{schema.node.displayName}' doesn't match expected '{type_name}' for id {struct_type_id}"
         )
     return schema
-
 
 
 def load_capnp_module(path_and_type: str, def_type: str = "Text", new_message: bool = False, **kwargs):
