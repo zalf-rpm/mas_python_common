@@ -69,11 +69,33 @@ def as_sturdy_ref(anypointer: _DynamicObjectReader):
     return None
 
 
-def get_fbp_attr(ip: IPReader, attr_name: str | None):
+def cast_to_schema(c: Any, schema_or_schema_type: capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType) -> Any:
+    if hasattr(schema_or_schema_type, "as_struct"):
+        c = c.as_struct(schema_or_schema_type.as_struct())
+    elif hasattr(schema_or_schema_type, "as_interface"):
+        c = c.as_interface(schema_or_schema_type.as_interface())
+    elif hasattr(schema_or_schema_type, "as_enum"):
+        c = c.as_enum(schema_or_schema_type.as_enum())
+    elif schema_or_schema_type is capnp_types.Text:
+        return c.as_text()
+    elif schema_or_schema_type is capnp_types.Void:
+        return c
+    elif schema_or_schema_type is capnp_types.AnyPointer:
+        return c
+
+    return c
+
+
+def get_fbp_attr(ip: IPReader, attr_name: str | None, schema: capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType = None):
     if ip.attributes and attr_name:
         for kv in ip.attributes:
             if kv.key == attr_name:
-                return kv.value
+                if kv._has("valueType"):
+                    return cast_to_schema(kv.value, kv.valueType)
+                elif schema is not None:
+                    return cast_to_schema(kv.value, schema)
+                else:
+                    return kv.value
     return None
 
 
@@ -1013,8 +1035,7 @@ _BUILTIN_TYPES = {
     "capability": capnp.types.AnyPointer,
 }
 
-
-def schema_from_content_type_string(text_with_id: str):
+def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType:
     """Resolve a content type identifier to its capnp type representation.
 
     Accepts either a schema id (``@<hex_node_id>=<TypeName>``) or a built-in
@@ -1024,7 +1045,8 @@ def schema_from_content_type_string(text_with_id: str):
     map to ``capnp.types.AnyPointer`` (pycapnp has no separate schema type for
     them) — the caller casts.
 
-    Returns a ``_SchemaType`` from ``capnp.types`` or a capnp schema node.
+    Returns a ``capnp.lib.capnp._SchemaType`` from ``capnp.types`` for built-in types
+    or a capnp schema node (capnp.lib.capnp._Schema) for actual castable structs or interfaces.
     """
     text = text_with_id.strip()
 
@@ -1045,7 +1067,7 @@ def schema_from_content_type_string(text_with_id: str):
     else:
         type_name = None
         struct_type_id = text
-    schema = capnp._embedded_schema_loader.get(int(struct_type_id[1:], 0))
+    schema = capnp._embedded_schema_loader.get(int(struct_type_id[1:], 16))
     if type_name is not None and schema.node.displayName != type_name:
         logger.warning(
             f"schema.node.displayName '{schema.node.displayName}' doesn't match expected '{type_name}' for id {struct_type_id}"
