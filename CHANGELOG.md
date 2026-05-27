@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.43](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.42...v0.1.43) (2026-05-27)
+
+
+### Features
+
+* add small helper to extract schema from content type string containing the id ([89206c4](https://github.com/zalf-rpm/mas_python_common/commit/89206c405977577b4bc5a813fcdd221dde2b5b1d))
+* replace tomli with build in tomllib ([2d477d0](https://github.com/zalf-rpm/mas_python_common/commit/2d477d0c4162c5e5d83632b6cb680d881a613b8d))
+
+
+### Bug Fixes
+
+* proper check for new_index ([1e47811](https://github.com/zalf-rpm/mas_python_common/commit/1e478118979f372cff75235131b11176d2b294ae))
+
 ## [0.1.42](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.41...v0.1.42) (2026-05-05)
 
 
