@@ -13,7 +13,7 @@ dependencies = [
   "pandas>=3.0.3,<4",
   "psutil>=7.2.2,<8",
   "tomlkit>=0.15.0,<0.16",
-  "zalfmas-capnp-schemas>=0.1.64,<0.2",
+  "zalfmas-capnp-schemas>=0.1.66,<0.2",
   "pytest>=9.0.3,<10",
 ]
 
