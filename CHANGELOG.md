@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.44](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.43...v0.1.44) (2026-05-27)
+
+
+### Features
+
+* also support capnproto built in types and primitives ([2924715](https://github.com/zalf-rpm/mas_python_common/commit/2924715bb6c24f207d1c32d22efe2cf2c63325a6))
+
 ## [0.1.43](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.42...v0.1.43) (2026-05-27)
 
 
