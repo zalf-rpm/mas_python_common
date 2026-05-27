@@ -988,25 +988,70 @@ class ConnectionManager:
             retry_secs += 1
 
 
+_BUILTIN_TYPES = {
+    # capnp primitives — all live on capnp.types
+    "void": capnp.types.Void,
+    "bool": capnp.types.Bool,
+    "int8": capnp.types.Int8,
+    "int16": capnp.types.Int16,
+    "int32": capnp.types.Int32,
+    "int64": capnp.types.Int64,
+    "uint8": capnp.types.UInt8,
+    "uint16": capnp.types.UInt16,
+    "uint32": capnp.types.UInt32,
+    "uint64": capnp.types.UInt64,
+    "float32": capnp.types.Float32,
+    "float64": capnp.types.Float64,
+    "text": capnp.types.Text,
+    "data": capnp.types.Data,
+    # unconstrained AnyPointer — any struct, list, blob, or interface
+    "anypointer": capnp.types.AnyPointer,
+    # AnyPointer constrained to structs / lists / capabilities —
+    # pycapnp has no separate schema type for these; callers cast
+    "anystruct": capnp.types.AnyPointer,
+    "anylist": capnp.types.AnyPointer,
+    "capability": capnp.types.AnyPointer,
+}
+
+
 def schema_from_content_type_string(text_with_id: str):
-    text_with_id = text_with_id.strip()
-    if not text_with_id.startswith("@"):
-        msg = "content_type_string must start with '@'"
-        logger.error(msg)
-        raise ValueError(msg)
-    eq_pos = text_with_id.find("=")
+    """Resolve a content type identifier to its capnp type representation.
+
+    Accepts either a schema id (``@<hex_node_id>=<TypeName>``) or a built-in
+    capnp type name: ``Void``, ``Bool``, ``Int8``-``Int64``, ``UInt8``-``UInt64``,
+    ``Float32``, ``Float64``, ``Text``, ``Data``, ``AnyPointer``, ``AnyStruct``,
+    ``AnyList``, ``Capability``.  ``AnyStruct`` / ``AnyList`` / ``Capability``
+    map to ``capnp.types.AnyPointer`` (pycapnp has no separate schema type for
+    them) — the caller casts.
+
+    Returns a ``_SchemaType`` from ``capnp.types`` or a capnp schema node.
+    """
+    text = text_with_id.strip()
+
+    if not text.startswith("@"):
+        key = text.lower()
+        if key in _BUILTIN_TYPES:
+            return _BUILTIN_TYPES[key]
+        raise ValueError(
+            f"Unknown content type '{text}'. "
+            f"Known types: {', '.join(sorted(_BUILTIN_TYPES))} "
+            f"or '@<hex_node_id>=<TypeName>'."
+        )
+
+    eq_pos = text.find("=")
     if eq_pos != -1:
-        type_name = text_with_id[eq_pos + 1 :].strip()
-        struct_type_id = text_with_id[:eq_pos].strip()
+        type_name = text[eq_pos + 1 :].strip()
+        struct_type_id = text[:eq_pos].strip()
     else:
         type_name = None
-        struct_type_id = text_with_id
+        struct_type_id = text
     schema = capnp._embedded_schema_loader.get(int(struct_type_id[1:], 0))
     if type_name is not None and schema.node.displayName != type_name:
         logger.warning(
             f"schema.node.displayName '{schema.node.displayName}' doesn't match expected '{type_name}' for id {struct_type_id}"
         )
     return schema
+
 
 
 def load_capnp_module(path_and_type: str, def_type: str = "Text", new_message: bool = False, **kwargs):
