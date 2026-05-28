@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.45](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.44...v0.1.45) (2026-05-28)
+
+
+### Features
+
+* make get_fbp_attr return also casted types ([eb6c98d](https://github.com/zalf-rpm/mas_python_common/commit/eb6c98d7ca15ba9acead7c446550fa6e17ef3c47))
+* use bundled schema with new accessors for schema retrieval ([7c6043a](https://github.com/zalf-rpm/mas_python_common/commit/7c6043af17ed34437c64b1e1beeb1ba71bfc21a7))
+
 ## [0.1.44](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.43...v0.1.44) (2026-05-27)
 
 
