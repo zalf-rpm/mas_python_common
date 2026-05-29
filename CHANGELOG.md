@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.46](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.45...v0.1.46) (2026-05-29)
+
+
+### Features
+
+* fixed issues with schema casting and schema loading returns struct, interface, enum ([92a5482](https://github.com/zalf-rpm/mas_python_common/commit/92a54825d6aec78dba1f2873ad3f76ee88f4ad8d))
+
+
+### Bug Fixes
+
+* add environment to basedpyright config so pycharm can properly use it without the plugin ([096ba28](https://github.com/zalf-rpm/mas_python_common/commit/096ba289e44c90b5afe16d28bcdb08dc059a0c2b))
+* further specify idea project settings and the enablement of ruff and pyright ([af7a4c3](https://github.com/zalf-rpm/mas_python_common/commit/af7a4c3bf145f2cde8fb4e334793958603e31144))
+* refactor pyproject toml to match the other zalfmas python repos and match pixi standards ([1a95edc](https://github.com/zalf-rpm/mas_python_common/commit/1a95edcf5bb2fd286bf925c0a83d347b053f4666))
+* set correct environment in pycharm (maybe exclude this stuff from git idk) ([c859575](https://github.com/zalf-rpm/mas_python_common/commit/c8595755472f7c9ab540e1e9c3ef856c0f6cd87d))
+
 ## [0.1.45](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.44...v0.1.45) (2026-05-28)
 
 
