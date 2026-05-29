@@ -22,7 +22,7 @@ import sys
 import urllib.parse as urlp
 import uuid
 from collections.abc import Callable
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Any, override
 
 import capnp
 import pysodium
@@ -76,11 +76,11 @@ def cast_to_schema(c: Any, schema_or_schema_type: capnp.lib.capnp._Schema | capn
         c = c.as_interface(schema_or_schema_type.as_interface())
     elif hasattr(schema_or_schema_type, "as_enum"):
         c = c.as_enum(schema_or_schema_type.as_enum())
-    elif schema_or_schema_type is capnp_types.Text:
+    elif schema_or_schema_type is capnp.types.Text:
         return c.as_text()
-    elif schema_or_schema_type is capnp_types.Void:
+    elif schema_or_schema_type is capnp.types.Void:
         return c
-    elif schema_or_schema_type is capnp_types.AnyPointer:
+    elif schema_or_schema_type is capnp.types.AnyPointer:
         return c
 
     return c

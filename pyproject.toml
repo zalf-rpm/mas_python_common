@@ -72,3 +72,6 @@ ignore = ["E501", "COM812"]
 [tool.basedpyright]
 ignore = ["tests"]
 typeCheckingMode = "basic"
+venvPath = ".pixi/envs"
+venv = "dev"
+
