@@ -69,20 +69,20 @@ def as_sturdy_ref(anypointer: _DynamicObjectReader):
     return None
 
 
-def cast_to_schema(c: Any, schema_or_schema_type: capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType) -> Any:
-    if hasattr(schema_or_schema_type, "as_struct"):
-        c = c.as_struct(schema_or_schema_type.as_struct())
-    elif hasattr(schema_or_schema_type, "as_interface"):
-        c = c.as_interface(schema_or_schema_type.as_interface())
-    elif hasattr(schema_or_schema_type, "as_enum"):
-        c = c.as_enum(schema_or_schema_type.as_enum())
-    elif schema_or_schema_type is capnp.types.Text:
-        return c.as_text()
-    elif schema_or_schema_type is capnp.types.Void:
-        return c
-    elif schema_or_schema_type is capnp.types.AnyPointer:
-        return c
-
+def cast_to_schema(c: Any, schema_or_schema_type: capnp.lib.capnp._StructSchema | capnp.lib.capnp._InterfaceSchema | capnp.lib.capnp._EnumSchema | capnp.lib.capnp._SchemaType) -> Any:
+    if isinstance(schema_or_schema_type, capnp.lib.capnp._StructSchema):
+        c = c.as_struct(schema_or_schema_type)
+    elif isinstance(schema_or_schema_type, capnp.lib.capnp._InterfaceSchema):
+        c = c.as_interface(schema_or_schema_type)
+    elif isinstance(schema_or_schema_type, capnp.lib.capnp._EnumSchema):
+        c = c.as_enum(schema_or_schema_type)
+    elif isinstance(schema_or_schema_type, capnp.lib.capnp._SchemaType):
+        if schema_or_schema_type is capnp.types.Text:
+            return c.as_text()
+        elif schema_or_schema_type is capnp.types.Void:
+            return c
+        elif schema_or_schema_type is capnp.types.AnyPointer:
+            return c
     return c
 
 
@@ -93,7 +93,7 @@ def get_fbp_attr(
         for kv in ip.attributes:
             if kv.key == attr_name:
                 if kv._has("valueType"):
-                    return cast_to_schema(kv.value, kv.valueType)
+                    return cast_to_schema(kv.value, schema_from_content_type_string(kv.valueType))
                 elif schema is not None:
                     return cast_to_schema(kv.value, schema)
                 else:
@@ -1038,7 +1038,7 @@ _BUILTIN_TYPES = {
 }
 
 
-def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._Schema | capnp.lib.capnp._SchemaType:
+def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._StructSchema | capnp.lib.capnp._InterfaceSchema | capnp.lib.capnp._EnumSchema | capnp.lib.capnp._SchemaType:
     """Resolve a content type identifier to its capnp type representation.
 
     Accepts either a schema id (``@<hex_node_id>=<TypeName>``) or a built-in
@@ -1071,10 +1071,17 @@ def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._Schem
         type_name = None
         struct_type_id = text
     schema = common_capnp.get_schema_by_id(int(struct_type_id[1:], 16))
+    which = schema.node.which()
+    if which == "struct":
+        schema = schema.as_struct()
+    elif which == "interface":
+        schema = schema.as_interface()
+    elif which == "enum":
+        schema = schema.as_enum()
+
     if type_name is not None and schema.node.displayName != type_name:
-        logger.warning(
-            f"schema.node.displayName '{schema.node.displayName}' doesn't match expected '{type_name}' for id {struct_type_id}"
-        )
+        logger.warning("schema.node.displayName '%s' doesn't match expected '%s' for id %s",
+        schema.node.displayName, type_name, struct_type_id)
     return schema
 
 

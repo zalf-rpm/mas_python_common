@@ -33,6 +33,7 @@ libsodium = ">=1.0.22,<2"
 
 [tool.pixi.feature.dev.dependencies]
 pixi-pycharm = ">=0.0.11,<0.0.12"
+basedpyright = ">=1.39.6,<2"
 
 [tool.pixi.environments]
 dev = ["dev"]
