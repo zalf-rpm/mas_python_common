@@ -1,6 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="PyrightModuleSettingsStorage">
+    <option name="moduleSettings">
+      <map>
+        <entry key="zalfmas-common">
+          <value>
+            <PyrightModuleSettingsData>
+              <option name="enabled" value="true" />
+            </PyrightModuleSettingsData>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="RuffConfiguration">
     <option name="enabled" value="true" />
+  </component>
+  <component name="RuffModuleSettingsStorage">
+    <option name="moduleSettings">
+      <map>
+        <entry key="zalfmas-common">
+          <value>
+            <RuffModuleSettingsData>
+              <option name="enabled" value="true" />
+            </RuffModuleSettingsData>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>
