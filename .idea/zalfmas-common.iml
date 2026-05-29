@@ -5,8 +5,9 @@
       <excludeFolder url="file://$MODULE_DIR$/.github" />
       <excludeFolder url="file://$MODULE_DIR$/.pixi" />
       <excludeFolder url="file://$MODULE_DIR$/.pixi/envs/default" />
+      <excludeFolder url="file://$MODULE_DIR$/.pixi/envs/dev" />
     </content>
-    <orderEntry type="jdk" jdkName="mas_python_common" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="mas_python_common_dev" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
