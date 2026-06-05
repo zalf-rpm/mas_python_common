@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.47](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.46...v0.1.47) (2026-06-05)
+
+
+### Features
+
+* switch to hatchling and hope it builds ([57ca0de](https://github.com/zalf-rpm/mas_python_common/commit/57ca0de036cba15fc61cec92e1592d384829211e))
+
 ## [0.1.46](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.45...v0.1.46) (2026-05-29)
 
 
