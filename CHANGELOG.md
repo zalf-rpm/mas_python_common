@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.48](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.47...v0.1.48) (2026-09-03)
+
+
+### Bug Fixes
+
+* duplicate line ([743459b](https://github.com/zalf-rpm/mas_python_common/commit/743459b32e695521a4907d1fc195a53c4db30ff7))
+* x ([810cdfd](https://github.com/zalf-rpm/mas_python_common/commit/810cdfd0ed802900fa9d5945f9d478ad1e859b66))
+
 ## [0.1.47](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.46...v0.1.47) (2026-06-05)
 
 
