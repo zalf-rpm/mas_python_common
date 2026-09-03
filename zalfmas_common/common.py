@@ -28,6 +28,7 @@ import capnp
 import pysodium
 import tomlkit as tk
 from mas.schema.common import common_capnp
+from mas.schema.fbp import fbp_capnp
 from mas.schema.persistence import persistence_capnp
 from mas.schema.persistence.persistence_capnp.types.results.tuples import (
     SaveResultTuple,
@@ -69,7 +70,13 @@ def as_sturdy_ref(anypointer: _DynamicObjectReader):
     return None
 
 
-def cast_to_schema(c: Any, schema_or_schema_type: capnp.lib.capnp._StructSchema | capnp.lib.capnp._InterfaceSchema | capnp.lib.capnp._EnumSchema | capnp.lib.capnp._SchemaType) -> Any:
+def cast_to_schema(
+    c: Any,
+    schema_or_schema_type: capnp.lib.capnp._StructSchema
+    | capnp.lib.capnp._InterfaceSchema
+    | capnp.lib.capnp._EnumSchema
+    | capnp.lib.capnp._SchemaType,
+) -> Any:
     if isinstance(schema_or_schema_type, capnp.lib.capnp._StructSchema):
         c = c.as_struct(schema_or_schema_type)
     elif isinstance(schema_or_schema_type, capnp.lib.capnp._InterfaceSchema):
@@ -137,13 +144,26 @@ def copy_and_set_fbp_attrs(old_ip: IPReader, new_ip: IPBuilder, **kwargs):
             if i not in indices:
                 attrs[i].key = kv.key
                 attrs[i].value = kv.value
+                if kv._has("valueType"):
+                    attrs[i].valueType = kv.valueType
 
     # set new attribute if there
     for attr_name, new_index in attr_name_to_new_index.items():
         if new_index is None:
             return
         attrs[new_index].key = attr_name
-        attrs[new_index].value = kwargs[attr_name]
+        val = kwargs[attr_name]
+        if isinstance(val, tuple) and len(val) > 1:
+            attrs[new_index].value = val[0]
+            attrs[new_index].valueType = val[1]
+        else:
+            attrs[new_index].value = val
+
+
+def copy_ip(in_ip: IPReader | IPBuilder) -> IPBuilder:
+    out_ip = fbp_capnp.IP.new_message(content=in_ip.content, type=in_ip.type, sysAttributes=in_ip.sysAttributes)
+    out_ip.attributes = list(in_ip.attributes)
+    return out_ip
 
 
 def update_config(
@@ -974,7 +994,7 @@ class ConnectionManager:
                 dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
                 # node = restorer.schema.node
                 # if node.displayName == f"{persistence_capnp.__name__}:Restorer": # and node.id == 11508422749279825468
-                #dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
+                # dyn_obj_reader = (await restorer.restore(localRef={"text": sr_token})).cap
                 if dyn_obj_reader is not None:
                     return (
                         dyn_obj_reader.as_interface(cast_as)
@@ -1038,7 +1058,14 @@ _BUILTIN_TYPES = {
 }
 
 
-def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._StructSchema | capnp.lib.capnp._InterfaceSchema | capnp.lib.capnp._EnumSchema | capnp.lib.capnp._SchemaType:
+def schema_from_content_type_string(
+    text_with_id: str,
+) -> (
+    capnp.lib.capnp._StructSchema
+    | capnp.lib.capnp._InterfaceSchema
+    | capnp.lib.capnp._EnumSchema
+    | capnp.lib.capnp._SchemaType
+):
     """Resolve a content type identifier to its capnp type representation.
 
     Accepts either a schema id (``@<hex_node_id>=<TypeName>``) or a built-in
@@ -1080,8 +1107,12 @@ def schema_from_content_type_string(text_with_id: str) -> capnp.lib.capnp._Struc
         schema = schema.as_enum()
 
     if type_name is not None and schema.node.displayName != type_name:
-        logger.warning("schema.node.displayName '%s' doesn't match expected '%s' for id %s",
-        schema.node.displayName, type_name, struct_type_id)
+        logger.warning(
+            "schema.node.displayName '%s' doesn't match expected '%s' for id %s",
+            schema.node.displayName,
+            type_name,
+            struct_type_id,
+        )
     return schema
 
 
