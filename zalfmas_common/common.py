@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING, Any, override
 import capnp
 import pysodium
 import tomlkit as tk
-from mas.schema import persistence
 from mas.schema.common import common_capnp
 from mas.schema.fbp import fbp_capnp
 from mas.schema.persistence import persistence_capnp
