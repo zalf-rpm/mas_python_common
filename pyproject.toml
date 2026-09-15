@@ -37,6 +37,9 @@ libsodium = ">=1.0.22,<2"
 [tool.pixi.feature.dev.dependencies]
 pixi-pycharm = ">=0.0.11,<0.0.12"
 
+[tool.pixi.feature.dev.tasks]
+test = { cmd = "pytest tests/" }
+
 [tool.pixi.environments]
 dev = ["dev"]
 
