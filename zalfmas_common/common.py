@@ -27,12 +27,10 @@ from typing import TYPE_CHECKING, Any, override
 import capnp
 import pysodium
 import tomlkit as tk
+from mas.schema import persistence
 from mas.schema.common import common_capnp
 from mas.schema.fbp import fbp_capnp
 from mas.schema.persistence import persistence_capnp
-from mas.schema.persistence.persistence_capnp.types.results.tuples import (
-    SaveResultTuple,
-)
 
 if TYPE_CHECKING:
     from capnp.lib.capnp import (
@@ -45,11 +43,15 @@ if TYPE_CHECKING:
     )
     from mas.schema.fbp.fbp_capnp.types.builders import IPBuilder
     from mas.schema.fbp.fbp_capnp.types.readers import IPReader
-    from mas.schema.persistence.persistence_capnp.types.builders import SturdyRefBuilder
+    from mas.schema.persistence.persistence_capnp.types.builders import SturdyRefBuilder, VatIdBuilder
     from mas.schema.persistence.persistence_capnp.types.clients import RestorerClient
     from mas.schema.persistence.persistence_capnp.types.readers import (
         SturdyRefReader,
         TokenReader,
+        VatIdReader,
+    )
+    from mas.schema.persistence.persistence_capnp.types.results.tuples import (
+        SaveResultTuple,
     )
     from mas.schema.service.service_capnp.types.clients import AdminClient
     from mas.schema.storage.storage_capnp.types.clients import ContainerClient
@@ -264,14 +266,18 @@ def sturdy_ref_str(
     )
 
 
+def vat_id_to_bytes(vat_id: VatIdReader | VatIdBuilder) -> bytearray:
+    ba = bytearray(32)
+    ba[0:8] = vat_id.publicKey0.to_bytes(8, byteorder=sys.byteorder, signed=False)
+    ba[8:16] = vat_id.publicKey1.to_bytes(8, byteorder=sys.byteorder, signed=False)
+    ba[16:24] = vat_id.publicKey2.to_bytes(8, byteorder=sys.byteorder, signed=False)
+    ba[24:32] = vat_id.publicKey3.to_bytes(8, byteorder=sys.byteorder, signed=False)
+    return ba
+
+
 def sturdy_ref_str_from_sr(sturdy_ref: SturdyRefReader):
-    sign_pk = bytearray(32)
-    sign_pk[0:8] = sturdy_ref.vat.id.publicKey0.to_bytes(8, byteorder=sys.byteorder, signed=False)
-    sign_pk[8:16] = sturdy_ref.vat.id.publicKey1.to_bytes(8, byteorder=sys.byteorder, signed=False)
-    sign_pk[16:24] = sturdy_ref.vat.id.publicKey2.to_bytes(8, byteorder=sys.byteorder, signed=False)
-    sign_pk[24:32] = sturdy_ref.vat.id.publicKey3.to_bytes(8, byteorder=sys.byteorder, signed=False)
     return sturdy_ref_str(
-        sign_pk,
+        vat_id_to_bytes(sturdy_ref.vat.id),
         sturdy_ref.vat.address.host,
         sturdy_ref.vat.address.port,
         sturdy_ref.localRef.text,
@@ -293,6 +299,10 @@ def get_public_ip(connect_to_host: str = "8.8.8.8", connect_to_port: int = 53) -
     public_ip = s.getsockname()[0]
     s.close()
     return str(public_ip)
+
+
+def pk_to_base64(public_key: bytes | bytearray):
+    return base64.urlsafe_b64encode(public_key).decode("utf-8")
 
 
 class Restorer(persistence_capnp.Restorer.Server):
@@ -324,7 +334,7 @@ class Restorer(persistence_capnp.Restorer.Server):
 
     @property
     def base64_vat_id(self):
-        return base64.urlsafe_b64encode(self._sign_pk).decode("utf-8")
+        return pk_to_base64(self._sign_pk)
 
     def signature_of_vat_id(self):
         public_key_bytes = base64.urlsafe_b64encode(self._sign_pk)
@@ -886,6 +896,14 @@ def create_sturdy_ref_from_sr_str(sturdy_ref: str) -> SturdyRefBuilder:
 class ConnectionManager:
     def __init__(self, restorer: Restorer | None = None, cache_connections: bool = True):
         self._connections: dict[str, _CapabilityClient] = {}
+        # Every TwoPartyClient we create must be kept alive independently of whether its
+        # bootstrap capability is cached for reuse: a capability obtained via restore() (the
+        # common sturdy-ref path) doesn't keep its parent TwoPartyClient alive itself (its
+        # _parent chain roots in the RPC response, not the client), so without this the
+        # connection gets garbage collected - and its socket closed - right after connect()
+        # returns, even while the caller is still actively using the capability.
+        self._live_clients: set[capnp.TwoPartyClient] = set()
+        self._background_tasks: set[asyncio.Task] = set()
         self._restorer: Restorer = restorer if restorer else Restorer()
         self._cache_connections: bool = cache_connections
 
@@ -896,6 +914,28 @@ class ConnectionManager:
     @property
     def cache_connections(self):
         return self._cache_connections
+
+    def _track_client(
+        self,
+        client: capnp.TwoPartyClient,
+        bootstrap_cap: _CapabilityClient,
+        vat_id_base64: str | None,
+    ) -> None:
+        """Keep client alive until its peer disconnects, then drop it (and any cache entry)."""
+        self._live_clients.add(client)
+
+        async def evict_on_disconnect() -> None:
+            try:
+                await client.on_disconnect()
+            except Exception:
+                logger.exception("ConnectionManager: error while waiting for disconnect")
+            self._live_clients.discard(client)
+            if vat_id_base64 is not None and self._connections.get(vat_id_base64) is bootstrap_cap:
+                del self._connections[vat_id_base64]
+
+        task = asyncio.create_task(evict_on_disconnect())
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
     async def connect(
         self,
@@ -916,6 +956,7 @@ class ConnectionManager:
             owner_guid = None
             bootstrap_interface_id = None
             sturdy_ref_interface_id = None
+            vat_id_base64 = None
 
             if isinstance(sturdy_ref, str):
                 # we assume that a sturdy ref url looks always like
@@ -930,7 +971,7 @@ class ConnectionManager:
                 url = urlp.urlparse(sturdy_ref)
 
                 if url.scheme == "capnp":
-                    # vat_id_base64 = url.username
+                    vat_id_base64 = url.username
                     host = url.hostname
                     port = url.port
                     if len(url.query) > 0:
@@ -950,13 +991,13 @@ class ConnectionManager:
             else:
                 vat_path = sturdy_ref.vat
                 # vat_id = vat_path.id
+                vat_id_base64 = pk_to_base64(vat_id_to_bytes(vat_path.id))
                 host = vat_path.address.host
                 port = vat_path.address.port
                 sr_token = sturdy_ref.localRef.text
 
-            host_port = str(host) + (":" + str(port) if port else "")
-            if self.cache_connections and host_port in self._connections:
-                bootstrap_cap = self._connections[host_port]
+            if self.cache_connections and vat_id_base64 is not None and vat_id_base64 in self._connections:
+                bootstrap_cap = self._connections[vat_id_base64]
             else:
                 # first try to connect via ssl
                 ctx = ssl.create_default_context(cadata=cadata)
@@ -972,9 +1013,11 @@ class ConnectionManager:
                         host=host,
                         port=port if port else default_port,
                     )
-                bootstrap_cap = capnp.TwoPartyClient(connection).bootstrap()
-                if self._cache_connections:
-                    self._connections[host_port] = bootstrap_cap
+                client = capnp.TwoPartyClient(connection)
+                bootstrap_cap = client.bootstrap()
+                self._track_client(client, bootstrap_cap, vat_id_base64)
+                if self._cache_connections and vat_id_base64 is not None:
+                    self._connections[vat_id_base64] = bootstrap_cap
 
             if resolve_b64_vat_id_or_alias:
                 resolver = bootstrap_cap.cast_as(persistence_capnp.HostPortResolver)
