@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.49](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.48...v0.1.49) (2026-09-15)
+
+
+### Features
+
+* add ConnectionManager regression tests and a pixi test task ([4381a86](https://github.com/zalf-rpm/mas_python_common/commit/4381a86b2fea3f6578fdf3efae3cf7ea3b02ff72))
+
+
+### Bug Fixes
+
+* ConnectionManager closing connections while still in use ([f865750](https://github.com/zalf-rpm/mas_python_common/commit/f86575041f1d0dd45f60ab6b23dc06767345bc28))
+
 ## [0.1.48](https://github.com/zalf-rpm/mas_python_common/compare/v0.1.47...v0.1.48) (2026-09-03)
 
 
